@@ -1,0 +1,54 @@
+package com.energiefixers.backend.energy.service;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.energiefixers.backend.energy.dto.EnergyReadingRequest;
+import com.energiefixers.backend.energy.models.EnergyReading;
+import com.energiefixers.backend.energy.repository.EnergyReadingRepository;
+import com.energiefixers.backend.shared.NotFoundException;
+import com.energiefixers.backend.user.models.User;
+import com.energiefixers.backend.user.repository.UserRepository;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class EnergyReadingService {
+
+    private final EnergyReadingRepository energyReadingRepository;
+    private final UserRepository userRepository;
+
+    public List<EnergyReading> findForTenant(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+
+        if (user.getProperty() == null) {
+            throw new IllegalStateException("Current user is not assigned to a property.");
+        }
+
+        return energyReadingRepository.findAllByPropertyId(user.getProperty().getId());
+    }
+
+    @Transactional
+    public EnergyReading createForTenant(Long userId, EnergyReadingRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+
+        if (user.getProperty() == null) {
+            throw new IllegalStateException("Current user is not assigned to a property.");
+        }
+
+        EnergyReading reading = new EnergyReading();
+        reading.setProperty(user.getProperty());
+        reading.setPeriodStart(request.getPeriodStart());
+        reading.setPeriodEnd(request.getPeriodEnd());
+        reading.setGasUsageM3(request.getGasUsageM3());
+        reading.setElectricityUsageKwh(request.getElectricityUsageKwh());
+        reading.setTotalCostEuros(request.getTotalCostEuros());
+        reading.setSourceType(EnergyReading.SourceType.ANNUAL_BILL_MANUAL);
+
+        return energyReadingRepository.save(reading);
+    }
+}
