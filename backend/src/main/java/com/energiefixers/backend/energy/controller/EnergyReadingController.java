@@ -5,17 +5,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.energiefixers.backend.energy.dto.EnergyReadingRequest;
+import com.energiefixers.backend.energy.dto.EnergyReadingResponse;
 import com.energiefixers.backend.energy.models.EnergyReading;
 import com.energiefixers.backend.energy.service.EnergyReadingService;
 import com.energiefixers.backend.shared.ApiResponse;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/energy-readings")
@@ -26,19 +30,34 @@ public class EnergyReadingController {
 
     @GetMapping
     @PreAuthorize("hasRole('TENANT')")
-    public ResponseEntity<ApiResponse<List<EnergyReading>>> getMine(Authentication authentication) {
+    public ResponseEntity<ApiResponse<List<EnergyReadingResponse>>> getMine(Authentication authentication) {
         Long userId = extractUserId(authentication);
-        return ResponseEntity.ok(ApiResponse.success(energyReadingService.findForTenant(userId)));
+        List<EnergyReading> readings = energyReadingService.findForTenant(userId);
+        List<EnergyReadingResponse> responses = readings.stream()
+                .map(EnergyReadingResponse::from)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('TENANT')")
-    public ResponseEntity<ApiResponse<EnergyReading>> create(
+    public ResponseEntity<ApiResponse<EnergyReadingResponse>> create(
             @RequestBody EnergyReadingRequest request,
             Authentication authentication) {
         Long userId = extractUserId(authentication);
         EnergyReading saved = energyReadingService.createForTenant(userId, request);
-        return ResponseEntity.status(201).body(ApiResponse.success(saved));
+        return ResponseEntity.status(201).body(ApiResponse.success(EnergyReadingResponse.from(saved)));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<EnergyReadingResponse>> update(
+            @PathVariable Long id,
+            @RequestBody EnergyReadingRequest request,
+            Authentication authentication) {
+        Long userId = extractUserId(authentication);
+        EnergyReading updated = energyReadingService.updateForTenant(userId, id, request);
+        return ResponseEntity.ok(ApiResponse.success(EnergyReadingResponse.from(updated)));
     }
 
     private Long extractUserId(Authentication authentication) {
