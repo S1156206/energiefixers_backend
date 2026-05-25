@@ -21,7 +21,9 @@ import com.energiefixers.backend.property.models.Property;
  * region-level data, never individual property data.
  */
 @Entity
-@Table(name = "energy_reading")
+@Table(name = "energy_reading", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"property_id", "period_start", "period_end"}, name = "uk_energy_reading_property_period")
+})
 @Getter @Setter @NoArgsConstructor
 public class EnergyReading {
 
