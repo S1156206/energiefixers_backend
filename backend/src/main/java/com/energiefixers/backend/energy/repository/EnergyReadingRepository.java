@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface EnergyReadingRepository extends JpaRepository<EnergyReading, Long> {
     List<EnergyReading> findAllByPropertyId(Long propertyId);
+    List<EnergyReading> findAllByPropertyIdOrderByPeriodEndAsc(Long propertyId);
 }
