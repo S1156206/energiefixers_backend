@@ -51,4 +51,30 @@ public class EnergyReadingService {
 
         return energyReadingRepository.save(reading);
     }
+
+    @Transactional
+    public EnergyReading updateForTenant(Long userId, Long readingId, EnergyReadingRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+
+        if (user.getProperty() == null) {
+            throw new IllegalStateException("Current user is not assigned to a property.");
+        }
+
+        EnergyReading reading = energyReadingRepository.findById(readingId)
+                .orElseThrow(() -> new NotFoundException("Energy reading not found: " + readingId));
+
+        // Verify the reading belongs to the tenant's property
+        if (!reading.getProperty().getId().equals(user.getProperty().getId())) {
+            throw new IllegalStateException("You do not have permission to update this reading.");
+        }
+
+        reading.setPeriodStart(request.getPeriodStart());
+        reading.setPeriodEnd(request.getPeriodEnd());
+        reading.setGasUsageM3(request.getGasUsageM3());
+        reading.setElectricityUsageKwh(request.getElectricityUsageKwh());
+        reading.setTotalCostEuros(request.getTotalCostEuros());
+
+        return energyReadingRepository.save(reading);
+    }
 }
