@@ -10,6 +10,8 @@ import com.energiefixers.backend.property.models.Region;
 import com.energiefixers.backend.property.repository.PropertyRepository;
 import com.energiefixers.backend.property.repository.RegionRepository;
 import com.energiefixers.backend.shared.NotFoundException;
+import com.energiefixers.backend.user.models.User;
+import com.energiefixers.backend.user.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +22,16 @@ public class PropertyService {
 
     private final PropertyRepository propertyRepository;
     private final RegionRepository regionRepository;
+    private final UserRepository userRepository;
+
+    public Property getMyProperty(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        if (user.getProperty() == null) {
+            throw new NotFoundException("No property linked to this account.");
+        }
+        return user.getProperty();
+    }
 
     public List<Property> getAll() {
         return propertyRepository.findAll();
