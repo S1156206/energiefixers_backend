@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.energiefixers.backend.invitation.dto.InvitationRequest;
+import com.energiefixers.backend.invitation.dto.InvitationResponse;
 import com.energiefixers.backend.invitation.dto.RegistrationRequest;
 import com.energiefixers.backend.invitation.models.Invitation;
 import com.energiefixers.backend.invitation.models.Invitation.InvitationType;
@@ -28,9 +29,9 @@ public class InvitationController {
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
-    public ResponseEntity<ApiResponse<Invitation>> send(@RequestBody InvitationRequest request) {
+    public ResponseEntity<ApiResponse<InvitationResponse>> send(@RequestBody InvitationRequest request) {
         Invitation invitation = invitationService.createInvitation(request);
-        return ResponseEntity.status(201).body(ApiResponse.success(invitation));
+        return ResponseEntity.status(201).body(ApiResponse.success(InvitationResponse.from(invitation)));
     }
 
     /**
@@ -38,9 +39,9 @@ public class InvitationController {
      * GET /api/invitations/{token}
      */
     @GetMapping("/{token}")
-    public ResponseEntity<ApiResponse<Invitation>> validate(@PathVariable String token) {
+    public ResponseEntity<ApiResponse<InvitationResponse>> validate(@PathVariable String token) {
         Invitation invitation = invitationService.validateToken(token);
-        return ResponseEntity.ok(ApiResponse.success(invitation));
+        return ResponseEntity.ok(ApiResponse.success(InvitationResponse.from(invitation)));
     }
 
     /**
