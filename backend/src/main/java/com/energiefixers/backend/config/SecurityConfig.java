@@ -34,6 +34,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/invitations/**").permitAll()
                         .requestMatchers("/api/invitations/*/accept").permitAll()
                         .requestMatchers("/api/submission/**").permitAll()
+                        .requestMatchers("/api/unsubscribe/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
