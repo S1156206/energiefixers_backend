@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.energiefixers.backend.energy.models.PropertySubmissionRequest;
 import com.energiefixers.backend.invitation.models.Invitation;
 import com.energiefixers.backend.invitation.models.Invitation.InvitationStatus;
 import com.energiefixers.backend.invitation.models.Invitation.InvitationType;
@@ -24,7 +25,12 @@ public class PropertyResponse {
     private EnergyLabel energyLabelBefore;
     private EnergyLabel energyLabelAfter;
     private Long regionId;
+    private String tenantEmail;
+    private EmailStatus emailStatus;
     private List<InvitationSummary> invitations;
+    private List<SubmissionRequestSummary> submissionRequests;
+
+    public enum EmailStatus { NO_EMAIL, OPT_OUT, DELIVERABLE }
 
     public static PropertyResponse from(Property property) {
         PropertyResponse response = new PropertyResponse();
@@ -36,13 +42,40 @@ public class PropertyResponse {
         response.setEnergyLabelBefore(property.getEnergyLabelBefore());
         response.setEnergyLabelAfter(property.getEnergyLabelAfter());
         response.setRegionId(property.getRegion().getId());
+        response.setTenantEmail(property.getTenantEmail());
         response.setInvitations(
             property.getInvitations() == null ? List.of() :
             property.getInvitations().stream()
                 .map(InvitationSummary::from)
                 .collect(Collectors.toList())
         );
+        response.setSubmissionRequests(
+            property.getSubmissionRequests() == null ? List.of() :
+            property.getSubmissionRequests().stream()
+                .map(SubmissionRequestSummary::from)
+                .collect(Collectors.toList())
+        );
         return response;
+    }
+
+    @Getter
+    @Setter
+    public static class SubmissionRequestSummary {
+        private Long id;
+        private String recipientEmail;
+        private LocalDateTime createdAt;
+        private LocalDateTime expiresAt;
+        private LocalDateTime submittedAt;
+
+        public static SubmissionRequestSummary from(PropertySubmissionRequest req) {
+            SubmissionRequestSummary summary = new SubmissionRequestSummary();
+            summary.setId(req.getId());
+            summary.setRecipientEmail(req.getRecipientEmail());
+            summary.setCreatedAt(req.getCreatedAt());
+            summary.setExpiresAt(req.getExpiresAt());
+            summary.setSubmittedAt(req.getSubmittedAt());
+            return summary;
+        }
     }
 
     @Getter
