@@ -2,10 +2,12 @@ package com.energiefixers.backend.energy.service;
 
 import com.energiefixers.backend.energy.dto.SubmissionFormRequest;
 import com.energiefixers.backend.energy.dto.SubmissionInfoResponse;
+import com.energiefixers.backend.energy.dto.SubmissionResultResponse;
 import com.energiefixers.backend.energy.models.EnergyReading;
 import com.energiefixers.backend.energy.models.PropertySubmissionRequest;
 import com.energiefixers.backend.energy.repository.EnergyReadingRepository;
 import com.energiefixers.backend.energy.repository.PropertySubmissionRequestRepository;
+import com.energiefixers.backend.invitation.service.InvitationService;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.repository.PropertyRepository;
 import com.energiefixers.backend.shared.MailService;
@@ -27,6 +29,7 @@ public class SubmissionService {
     private final PropertyRepository propertyRepository;
     private final EnergyReadingRepository energyReadingRepository;
     private final MailService mailService;
+    private final InvitationService invitationService;
 
     @Transactional
     public void createSubmissionRequest(Long propertyId, String email) {
@@ -49,11 +52,12 @@ public class SubmissionService {
     }
 
     @Transactional
-    public void submitReading(String token, SubmissionFormRequest body) {
+    public SubmissionResultResponse submitReading(String token, SubmissionFormRequest body) {
         PropertySubmissionRequest request = resolveActiveRequest(token);
+        Property property = request.getProperty();
 
         EnergyReading reading = new EnergyReading();
-        reading.setProperty(request.getProperty());
+        reading.setProperty(property);
         reading.setGasUsageM3(body.getGasUsageM3());
         reading.setElectricityUsageKwh(body.getElectricityUsageKwh());
         reading.setTotalCostEuros(body.getTotalCostEuros());
@@ -65,6 +69,14 @@ public class SubmissionService {
 
         request.setSubmittedAt(LocalDateTime.now());
         submissionRequestRepository.save(request);
+
+        if (property.getTenant() == null) {
+            String invitationToken = invitationService.createRegistrationInvitation(
+                property.getId(), request.getRecipientEmail());
+            return SubmissionResultResponse.withInvitation(invitationToken);
+        }
+
+        return SubmissionResultResponse.noInvitation();
     }
 
     private PropertySubmissionRequest resolveActiveRequest(String token) {
