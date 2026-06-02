@@ -2,6 +2,7 @@ package com.energiefixers.backend.energy.controller;
 
 import com.energiefixers.backend.energy.dto.SubmissionFormRequest;
 import com.energiefixers.backend.energy.dto.SubmissionInfoResponse;
+import com.energiefixers.backend.energy.dto.SubmissionResultResponse;
 import com.energiefixers.backend.energy.service.SubmissionService;
 import com.energiefixers.backend.shared.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +22,9 @@ public class SubmissionController {
     }
 
     @PostMapping("/{token}")
-    public ResponseEntity<ApiResponse<Void>> submit(
+    public ResponseEntity<ApiResponse<SubmissionResultResponse>> submit(
             @PathVariable String token,
             @RequestBody SubmissionFormRequest body) {
-        submissionService.submitReading(token, body);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(submissionService.submitReading(token, body)));
     }
 }

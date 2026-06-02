@@ -89,6 +89,31 @@ public class InvitationService {
     }
 
     /**
+     * Creates a REGISTRATION invitation without sending an email.
+     * Used after an anonymous submission to offer inline account creation.
+     * Returns the raw token so the caller can embed it in a response.
+     */
+    @Transactional
+    public String createRegistrationInvitation(Long propertyId, String recipientEmail) {
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> new NotFoundException("Property not found: " + propertyId));
+
+        invitationRepository
+                .findAllByPropertyIdAndTypeAndStatus(propertyId, InvitationType.REGISTRATION, InvitationStatus.PENDING)
+                .forEach(existing -> {
+                    existing.setStatus(InvitationStatus.REVOKED);
+                    invitationRepository.save(existing);
+                });
+
+        Invitation invitation = new Invitation();
+        invitation.setProperty(property);
+        invitation.setType(InvitationType.REGISTRATION);
+        invitation.setRecipientEmail(recipientEmail);
+
+        return invitationRepository.save(invitation).getToken();
+    }
+
+    /**
      * Expires all pending invitations whose expiresAt has passed.
      * Hook this up to a @Scheduled job, e.g. nightly.
      */
