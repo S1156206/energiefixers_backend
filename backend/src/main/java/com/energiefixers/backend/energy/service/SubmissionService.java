@@ -36,6 +36,13 @@ public class SubmissionService {
         Property property = propertyRepository.findById(propertyId)
             .orElseThrow(() -> new NotFoundException("Property not found: " + propertyId));
 
+        submissionRequestRepository
+            .findAllByPropertyIdAndSubmittedAtIsNull(propertyId)
+            .forEach(pending -> {
+                pending.setExpiresAt(LocalDateTime.now());
+                submissionRequestRepository.save(pending);
+            });
+
         PropertySubmissionRequest request = new PropertySubmissionRequest();
         request.setProperty(property);
         request.setToken(UUID.randomUUID().toString());

@@ -62,4 +62,14 @@ public class FixVisitService {
 
         return fixVisitRepository.save(visit);
     }
+
+    @Transactional
+    public void deleteFixVisit(Long propertyId, Long visitId) {
+        FixVisit visit = fixVisitRepository.findById(visitId)
+                .orElseThrow(() -> new NotFoundException("Fix visit not found: " + visitId));
+        if (!visit.getProperty().getId().equals(propertyId)) {
+            throw new NotFoundException("Fix visit not found for this property");
+        }
+        fixVisitRepository.deleteById(visitId);
+    }
 }

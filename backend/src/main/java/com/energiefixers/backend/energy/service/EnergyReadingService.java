@@ -77,4 +77,23 @@ public class EnergyReadingService {
 
         return energyReadingRepository.save(reading);
     }
+
+    @Transactional
+    public void deleteForTenant(Long userId, Long readingId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+
+        if (user.getProperty() == null) {
+            throw new IllegalStateException("Current user is not assigned to a property.");
+        }
+
+        EnergyReading reading = energyReadingRepository.findById(readingId)
+                .orElseThrow(() -> new NotFoundException("Energy reading not found: " + readingId));
+
+        if (!reading.getProperty().getId().equals(user.getProperty().getId())) {
+            throw new IllegalStateException("You do not have permission to delete this reading.");
+        }
+
+        energyReadingRepository.deleteById(readingId);
+    }
 }

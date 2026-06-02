@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -58,6 +59,15 @@ public class EnergyReadingController {
         Long userId = extractUserId(authentication);
         EnergyReading updated = energyReadingService.updateForTenant(userId, id, request);
         return ResponseEntity.ok(ApiResponse.success(EnergyReadingResponse.from(updated)));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable Long id,
+            Authentication authentication) {
+        energyReadingService.deleteForTenant(extractUserId(authentication), id);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     private Long extractUserId(Authentication authentication) {
