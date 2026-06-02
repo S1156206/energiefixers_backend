@@ -13,6 +13,8 @@ import com.energiefixers.backend.shared.NotFoundException;
 import com.energiefixers.backend.user.models.User;
 import com.energiefixers.backend.user.repository.UserRepository;
 
+import java.util.Optional;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -56,6 +58,7 @@ public class PropertyService {
         property.setHouseNumberSuffix(request.getHouseNumberSuffix());
         property.setPostcode(request.getPostcode());
         property.setEnergyLabelBefore(request.getEnergyLabelBefore());
+        property.setTenantEmail(request.getTenantEmail());
         property.setRegion(region);
 
        return propertyRepository.save(property);
@@ -71,6 +74,7 @@ public class PropertyService {
         property.setPostcode(request.getPostcode());
         property.setEnergyLabelBefore(request.getEnergyLabelBefore());
         property.setEnergyLabelAfter(request.getEnergyLabelAfter());
+        property.setTenantEmail(request.getTenantEmail());
 
         if (request.getRegionId() != null) {
             Region region = regionRepository.findById(request.getRegionId())
@@ -79,5 +83,16 @@ public class PropertyService {
         }
 
         return propertyRepository.save(property);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Property property = getById(id);
+        if (property.getTenant() != null) {
+            User tenant = property.getTenant();
+            tenant.setProperty(null);
+            userRepository.save(tenant);
+        }
+        propertyRepository.deleteById(id);
     }
 }
