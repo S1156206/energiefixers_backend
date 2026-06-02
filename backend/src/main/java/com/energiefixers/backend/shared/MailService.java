@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class MailService {
 
     private final JavaMailSender mailSender;
+    private final EmailOptOutService emailOptOutService;
 
     @Value("${app.mail.from:no-reply@energiefixers071.nl}")
     private String fromAddress;
@@ -25,6 +26,11 @@ public class MailService {
         if (invitation.getRecipientEmail() == null || invitation.getRecipientEmail().isBlank()) {
             return;
         }
+        if (emailOptOutService.isOptedOut(invitation.getRecipientEmail())) {
+            return;
+        }
+
+        String unsubscribeToken = emailOptOutService.getOrCreateToken(invitation.getRecipientEmail());
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -34,10 +40,12 @@ public class MailService {
             helper.setSubject("Energiefixers071 uitnodiging om te registreren");
 
             String invitationLink = String.format("%s/register?token=%s", frontendUrl, invitation.getToken());
+            String unsubscribeLink = String.format("%s/unsubscribe/%s", frontendUrl, unsubscribeToken);
             String body = "Je bent uitgenodigd om je energierekening bij Energiefixers071 te registreren.\n\n"
                     + "Klik op de onderstaande link om je registratie te voltooien:\n"
                     + invitationLink
-                    + "\n\nAls je deze uitnodiging niet verwachtte, negeer dan deze e-mail.";
+                    + "\n\nAls je deze uitnodiging niet verwachtte, negeer dan deze e-mail.\n\n"
+                    + "---\nGeen e-mails meer ontvangen? " + unsubscribeLink;
 
             helper.setText(body);
             mailSender.send(message);
@@ -47,6 +55,12 @@ public class MailService {
     }
 
     public void sendSubmissionRequest(String recipientEmail, String token, String propertyAddress) {
+        if (emailOptOutService.isOptedOut(recipientEmail)) {
+            return;
+        }
+
+        String unsubscribeToken = emailOptOutService.getOrCreateToken(recipientEmail);
+
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
@@ -55,12 +69,14 @@ public class MailService {
             helper.setSubject("Energiefixers071 - Geef uw jaarverbruik door");
 
             String submissionLink = String.format("%s/submit/%s", frontendUrl, token);
+            String unsubscribeLink = String.format("%s/unsubscribe/%s", frontendUrl, unsubscribeToken);
             String body = "Energiefixers071 heeft bij uw woning (" + propertyAddress + ") energiebesparende materialen geïnstalleerd.\n\n"
                     + "Wij vragen u uw jaarlijkse energieverbruik door te geven, zodat we kunnen zien hoeveel u heeft bespaard.\n\n"
                     + "Klik op de link hieronder om uw verbruik in te vullen:\n"
                     + submissionLink
                     + "\n\nDeze link is 90 dagen geldig. U hoeft geen account aan te maken.\n\n"
-                    + "Als u deze e-mail niet verwachtte, kunt u deze negeren.";
+                    + "Als u deze e-mail niet verwachtte, kunt u deze negeren.\n\n"
+                    + "---\nGeen e-mails meer ontvangen? " + unsubscribeLink;
 
             helper.setText(body);
             mailSender.send(message);
