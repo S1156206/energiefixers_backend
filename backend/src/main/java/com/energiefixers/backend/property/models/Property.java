@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 import com.energiefixers.backend.energy.models.EnergyReading;
+import com.energiefixers.backend.energy.models.PropertySubmissionRequest;
 import com.energiefixers.backend.invitation.models.Invitation;
 import com.energiefixers.backend.user.models.User;
 import com.energiefixers.backend.visit.models.FixVisit;
@@ -48,6 +49,9 @@ public class Property {
     @Column(name = "energy_label_after")
     private EnergyLabel energyLabelAfter;
 
+    @Column(name = "tenant_email")
+    private String tenantEmail;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "region_id")
     private Region region;
@@ -62,8 +66,11 @@ public class Property {
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
     private List<EnergyReading> energyReadings;
 
-    @OneToMany(mappedBy = "property")
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
     private List<Invitation> invitations;
+
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
+    private List<PropertySubmissionRequest> submissionRequests;
 
     public enum EnergyLabel {
         A_PLUS_PLUS_PLUS, A_PLUS_PLUS, A_PLUS, A, B, C, D, E, F, G
