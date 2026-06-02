@@ -6,6 +6,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.energiefixers.backend.energy.dto.CreateSubmissionRequestBody;
+import com.energiefixers.backend.energy.service.SubmissionService;
 import com.energiefixers.backend.property.dto.MyPropertyResponse;
 import com.energiefixers.backend.property.dto.PropertyRequest;
 import com.energiefixers.backend.property.dto.PropertyResponse;
@@ -27,6 +29,7 @@ public class PropertyController {
 
     private final PropertyService propertyService;
     private final FixVisitService fixVisitService;
+    private final SubmissionService submissionService;
 
     /** Tenant: get own property including fix visits */
     @GetMapping("/me")
@@ -86,6 +89,16 @@ public class PropertyController {
             return Long.parseLong((String) principal);
         }
         throw new IllegalStateException("Unable to determine current user id from authentication principal.");
+    }
+
+    /** Staff/admin: send a magic-link submission request to the resident */
+    @PostMapping("/{id}/submission-requests")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> createSubmissionRequest(
+            @PathVariable Long id,
+            @RequestBody CreateSubmissionRequestBody body) {
+        submissionService.createSubmissionRequest(id, body.getEmail());
+        return ResponseEntity.status(201).body(ApiResponse.success(null));
     }
 
     /** Staff/admin: update property details or energy label */
