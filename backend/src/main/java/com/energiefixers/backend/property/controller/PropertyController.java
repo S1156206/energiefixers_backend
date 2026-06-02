@@ -11,9 +11,11 @@ import com.energiefixers.backend.energy.service.SubmissionService;
 import com.energiefixers.backend.property.dto.MyPropertyResponse;
 import com.energiefixers.backend.property.dto.PropertyRequest;
 import com.energiefixers.backend.property.dto.PropertyResponse;
+import com.energiefixers.backend.property.dto.PropertyResponse.EmailStatus;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.service.PropertyService;
 import com.energiefixers.backend.shared.ApiResponse;
+import com.energiefixers.backend.shared.EmailOptOutService;
 import com.energiefixers.backend.visit.dto.FixVisitRequest;
 import com.energiefixers.backend.visit.dto.FixVisitResponse;
 import com.energiefixers.backend.visit.models.FixVisit;
@@ -30,6 +32,7 @@ public class PropertyController {
     private final PropertyService propertyService;
     private final FixVisitService fixVisitService;
     private final SubmissionService submissionService;
+    private final EmailOptOutService emailOptOutService;
 
     /** Tenant: get own property including fix visits */
     @GetMapping("/me")
@@ -49,7 +52,7 @@ public class PropertyController {
             ? propertyService.getAllByRegion(regionId)
             : propertyService.getAll();
         List<PropertyResponse> responses = result.stream()
-                .map(PropertyResponse::from)
+                .map(p -> enriched(PropertyResponse.from(p), p.getTenantEmail()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
@@ -59,7 +62,7 @@ public class PropertyController {
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<PropertyResponse>> getById(@PathVariable Long id) {
         Property property = propertyService.getById(id);
-        return ResponseEntity.ok(ApiResponse.success(PropertyResponse.from(property)));
+        return ResponseEntity.ok(ApiResponse.success(enriched(PropertyResponse.from(property), property.getTenantEmail())));
     }
 
     /** Staff/admin: register a new property after a fix visit */
@@ -67,7 +70,7 @@ public class PropertyController {
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<PropertyResponse>> create(@RequestBody PropertyRequest request) {
         Property created = propertyService.create(request);
-        return ResponseEntity.status(201).body(ApiResponse.success(PropertyResponse.from(created)));
+        return ResponseEntity.status(201).body(ApiResponse.success(enriched(PropertyResponse.from(created), created.getTenantEmail())));
     }
 
     /** Staff/admin: add a fix visit to an existing property */
@@ -108,6 +111,35 @@ public class PropertyController {
             @PathVariable Long id,
             @RequestBody PropertyRequest request) {
         Property updated = propertyService.update(id, request);
-        return ResponseEntity.ok(ApiResponse.success(PropertyResponse.from(updated)));
+        return ResponseEntity.ok(ApiResponse.success(enriched(PropertyResponse.from(updated), updated.getTenantEmail())));
+    }
+
+    /** Staff/admin: delete a fix visit and all its installed materials */
+    @DeleteMapping("/{id}/fix-visits/{visitId}")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteFixVisit(
+            @PathVariable Long id,
+            @PathVariable Long visitId) {
+        fixVisitService.deleteFixVisit(id, visitId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /** Staff/admin: delete a property and all associated data */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        propertyService.delete(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    private PropertyResponse enriched(PropertyResponse response, String email) {
+        if (email == null || email.isBlank()) {
+            response.setEmailStatus(EmailStatus.NO_EMAIL);
+        } else if (emailOptOutService.isOptedOut(email)) {
+            response.setEmailStatus(EmailStatus.OPT_OUT);
+        } else {
+            response.setEmailStatus(EmailStatus.DELIVERABLE);
+        }
+        return response;
     }
 }

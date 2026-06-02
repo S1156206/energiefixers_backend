@@ -14,4 +14,5 @@ public class PropertyRequest {
     private EnergyLabel energyLabelBefore;
     private EnergyLabel energyLabelAfter;
     private Long regionId;
+    private String tenantEmail;
 }
