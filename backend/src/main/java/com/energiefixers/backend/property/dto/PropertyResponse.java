@@ -13,6 +13,7 @@ import com.energiefixers.backend.invitation.models.Invitation.InvitationStatus;
 import com.energiefixers.backend.invitation.models.Invitation.InvitationType;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.models.Property.EnergyLabel;
+import com.energiefixers.backend.visit.dto.FixVisitResponse;
 
 @Getter
 @Setter
@@ -29,6 +30,7 @@ public class PropertyResponse {
     private EmailStatus emailStatus;
     private List<InvitationSummary> invitations;
     private List<SubmissionRequestSummary> submissionRequests;
+    private List<FixVisitResponse> fixVisits;
 
     public enum EmailStatus { NO_EMAIL, OPT_OUT, DELIVERABLE }
 
@@ -53,6 +55,12 @@ public class PropertyResponse {
             property.getSubmissionRequests() == null ? List.of() :
             property.getSubmissionRequests().stream()
                 .map(SubmissionRequestSummary::from)
+                .collect(Collectors.toList())
+        );
+        response.setFixVisits(
+            property.getFixVisits() == null ? List.of() :
+            property.getFixVisits().stream()
+                .map(FixVisitResponse::from)
                 .collect(Collectors.toList())
         );
         return response;
