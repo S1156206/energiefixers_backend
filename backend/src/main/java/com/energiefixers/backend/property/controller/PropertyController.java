@@ -11,6 +11,7 @@ import com.energiefixers.backend.energy.service.SubmissionService;
 import com.energiefixers.backend.property.dto.MyPropertyResponse;
 import com.energiefixers.backend.property.dto.PropertyRequest;
 import com.energiefixers.backend.property.dto.PropertyResponse;
+import com.energiefixers.backend.property.dto.PropertySummaryResponse;
 import com.energiefixers.backend.property.dto.PropertyResponse.EmailStatus;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.service.PropertyService;
@@ -46,13 +47,13 @@ public class PropertyController {
     /** Staff/admin: get all properties, optionally filtered by region */
     @GetMapping
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<PropertyResponse>>> getAll(
+    public ResponseEntity<ApiResponse<List<PropertySummaryResponse>>> getAll(
             @RequestParam(required = false) Long regionId) {
         List<Property> result = regionId != null
             ? propertyService.getAllByRegion(regionId)
             : propertyService.getAll();
-        List<PropertyResponse> responses = result.stream()
-                .map(p -> enriched(PropertyResponse.from(p), p.getTenantEmail()))
+        List<PropertySummaryResponse> responses = result.stream()
+                .map(p -> enrichedSummary(PropertySummaryResponse.from(p), p.getTenantEmail()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
@@ -133,13 +134,18 @@ public class PropertyController {
     }
 
     private PropertyResponse enriched(PropertyResponse response, String email) {
-        if (email == null || email.isBlank()) {
-            response.setEmailStatus(EmailStatus.NO_EMAIL);
-        } else if (emailOptOutService.isOptedOut(email)) {
-            response.setEmailStatus(EmailStatus.OPT_OUT);
-        } else {
-            response.setEmailStatus(EmailStatus.DELIVERABLE);
-        }
+        response.setEmailStatus(resolveEmailStatus(email));
         return response;
+    }
+
+    private PropertySummaryResponse enrichedSummary(PropertySummaryResponse response, String email) {
+        response.setEmailStatus(resolveEmailStatus(email));
+        return response;
+    }
+
+    private EmailStatus resolveEmailStatus(String email) {
+        if (email == null || email.isBlank()) return EmailStatus.NO_EMAIL;
+        if (emailOptOutService.isOptedOut(email)) return EmailStatus.OPT_OUT;
+        return EmailStatus.DELIVERABLE;
     }
 }
