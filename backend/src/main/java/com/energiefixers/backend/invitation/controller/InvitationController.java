@@ -6,6 +6,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.energiefixers.backend.auth.dto.LoginRequest;
+import com.energiefixers.backend.auth.dto.LoginResponse;
+import com.energiefixers.backend.auth.service.AuthService;
 import com.energiefixers.backend.invitation.dto.InvitationRequest;
 import com.energiefixers.backend.invitation.dto.InvitationResponse;
 import com.energiefixers.backend.invitation.dto.RegistrationRequest;
@@ -22,6 +25,7 @@ public class InvitationController {
 
     private final InvitationService invitationService;
     private final UserService userService;
+    private final AuthService authService;
 
     /**
      * Staff sends an invitation to a tenant.
@@ -53,10 +57,11 @@ public class InvitationController {
      * This is the only unauthenticated write endpoint — the token is the proof of identity.
      */
     @PostMapping("/{token}/accept")
-    public ResponseEntity<ApiResponse<Void>> accept(@PathVariable String token,
+    public ResponseEntity<ApiResponse<LoginResponse>> accept(@PathVariable String token,
                                                    @RequestBody RegistrationRequest request) {
         Invitation invitation = invitationService.validateToken(token);
         userService.registerFromInvitation(invitation, request);
-        return ResponseEntity.status(201).body(ApiResponse.success(null));
+        LoginResponse response = authService.login(new LoginRequest(request.getEmail(), request.getPassword()));
+        return ResponseEntity.status(201).body(ApiResponse.success(response));
     }
 }
