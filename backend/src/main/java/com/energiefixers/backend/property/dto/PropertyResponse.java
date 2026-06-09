@@ -33,7 +33,9 @@ public class PropertyResponse {
     private List<SubmissionRequestSummary> submissionRequests;
     private List<FixVisitResponse> fixVisits;
 
-    public enum EmailStatus { NO_EMAIL, OPT_OUT, DELIVERABLE }
+    public enum EmailStatus {
+        NO_EMAIL, OPT_OUT, DELIVERABLE
+    }
 
     public static PropertyResponse from(Property property) {
         PropertyResponse response = new PropertyResponse();
@@ -47,24 +49,22 @@ public class PropertyResponse {
         response.setRegionId(property.getRegion().getId());
         response.setTenantEmail(property.getTenantEmail());
         response.setInvitations(
-            property.getInvitations() == null ? List.of() :
-            property.getInvitations().stream()
-                .filter(i -> i.getStatus() != InvitationStatus.REVOKED)
-                .map(InvitationSummary::from)
-                .collect(Collectors.toList())
-        );
+                property.getInvitations() == null ? List.of()
+                        : property.getInvitations().stream()
+                                .filter(i -> i.getStatus() != InvitationStatus.REVOKED)
+                                .map(InvitationSummary::from)
+                                .collect(Collectors.toList()));
         response.setSubmissionRequests(
-            property.getSubmissionRequests() == null ? List.of() :
-            property.getSubmissionRequests().stream()
-                .map(SubmissionRequestSummary::from)
-                .collect(Collectors.toList())
-        );
+                property.getSubmissionRequests() == null ? List.of()
+                        : property.getSubmissionRequests().stream()
+                                .filter(s -> s.getExpiresAt().isAfter(LocalDateTime.now()))
+                                .map(SubmissionRequestSummary::from)
+                                .collect(Collectors.toList()));
         response.setFixVisits(
-            property.getFixVisits() == null ? List.of() :
-            property.getFixVisits().stream()
-                .map(FixVisitResponse::from)
-                .collect(Collectors.toList())
-        );
+                property.getFixVisits() == null ? List.of()
+                        : property.getFixVisits().stream()
+                                .map(FixVisitResponse::from)
+                                .collect(Collectors.toList()));
         return response;
     }
 
@@ -76,6 +76,7 @@ public class PropertyResponse {
         private LocalDateTime createdAt;
         private LocalDateTime expiresAt;
         private LocalDateTime submittedAt;
+        private LocalDateTime nextMailAvailableAt;
 
         public static SubmissionRequestSummary from(PropertySubmissionRequest req) {
             SubmissionRequestSummary summary = new SubmissionRequestSummary();
@@ -84,6 +85,7 @@ public class PropertyResponse {
             summary.setCreatedAt(req.getCreatedAt());
             summary.setExpiresAt(req.getExpiresAt());
             summary.setSubmittedAt(req.getSubmittedAt());
+            summary.setNextMailAvailableAt(req.getCreatedAt().plus(InvitationService.COOLDOWN));
             return summary;
         }
     }
