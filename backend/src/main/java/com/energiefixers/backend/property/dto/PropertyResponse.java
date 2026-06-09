@@ -11,6 +11,7 @@ import com.energiefixers.backend.energy.models.PropertySubmissionRequest;
 import com.energiefixers.backend.invitation.models.Invitation;
 import com.energiefixers.backend.invitation.models.Invitation.InvitationStatus;
 import com.energiefixers.backend.invitation.models.Invitation.InvitationType;
+import com.energiefixers.backend.invitation.service.InvitationService;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.models.Property.EnergyLabel;
 import com.energiefixers.backend.visit.dto.FixVisitResponse;
@@ -97,6 +98,7 @@ public class PropertyResponse {
         private LocalDateTime sentAt;
         private LocalDateTime expiresAt;
         private LocalDateTime acceptedAt;
+        private LocalDateTime nextMailAvailableAt;
 
         public static InvitationSummary from(Invitation invitation) {
             InvitationSummary summary = new InvitationSummary();
@@ -107,6 +109,7 @@ public class PropertyResponse {
             summary.setSentAt(invitation.getSentAt());
             summary.setExpiresAt(invitation.getExpiresAt());
             summary.setAcceptedAt(invitation.getAcceptedAt());
+            summary.setNextMailAvailableAt(invitation.getSentAt().plus(InvitationService.COOLDOWN));
             return summary;
         }
     }
