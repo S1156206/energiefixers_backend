@@ -48,6 +48,7 @@ public class PropertyResponse {
         response.setInvitations(
             property.getInvitations() == null ? List.of() :
             property.getInvitations().stream()
+                .filter(i -> i.getStatus() != InvitationStatus.REVOKED)
                 .map(InvitationSummary::from)
                 .collect(Collectors.toList())
         );
