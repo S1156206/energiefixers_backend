@@ -11,15 +11,19 @@ import com.energiefixers.backend.invitation.models.Invitation.InvitationType;
 import com.energiefixers.backend.invitation.repository.InvitationRepository;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.repository.PropertyRepository;
+import com.energiefixers.backend.shared.CooldownException;
 import com.energiefixers.backend.shared.MailService;
 import com.energiefixers.backend.shared.NotFoundException;
 import com.energiefixers.backend.user.models.User;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class InvitationService {
+
+    public static final Duration COOLDOWN = Duration.ofHours(24);
 
     private final InvitationRepository invitationRepository;
     private final PropertyRepository propertyRepository;
@@ -33,6 +37,15 @@ public class InvitationService {
     public Invitation createInvitation(InvitationRequest request) {
         Property property = propertyRepository.findById(request.getPropertyId())
                 .orElseThrow(() -> new NotFoundException("Property not found: " + request.getPropertyId()));
+
+        invitationRepository
+                .findTopByPropertyIdAndTypeOrderBySentAtDesc(request.getPropertyId(), request.getType())
+                .ifPresent(last -> {
+                    LocalDateTime nextAvailable = last.getSentAt().plus(COOLDOWN);
+                    if (LocalDateTime.now().isBefore(nextAvailable)) {
+                        throw new CooldownException(nextAvailable);
+                    }
+                });
 
         // Revoke any open pending invitations of the same type first
         invitationRepository

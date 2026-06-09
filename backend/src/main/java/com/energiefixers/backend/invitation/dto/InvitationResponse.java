@@ -20,6 +20,7 @@ public class InvitationResponse {
     private LocalDateTime sentAt;
     private LocalDateTime expiresAt;
     private LocalDateTime acceptedAt;
+    private LocalDateTime nextMailAvailableAt;
 
     public static InvitationResponse from(Invitation invitation) {
         InvitationResponse response = new InvitationResponse();

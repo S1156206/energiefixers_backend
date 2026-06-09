@@ -31,7 +31,9 @@ public class InvitationController {
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<InvitationResponse>> send(@RequestBody InvitationRequest request) {
         Invitation invitation = invitationService.createInvitation(request);
-        return ResponseEntity.status(201).body(ApiResponse.success(InvitationResponse.from(invitation)));
+        InvitationResponse response = InvitationResponse.from(invitation);
+        response.setNextMailAvailableAt(invitation.getSentAt().plus(InvitationService.COOLDOWN));
+        return ResponseEntity.status(201).body(ApiResponse.success(response));
     }
 
     /**

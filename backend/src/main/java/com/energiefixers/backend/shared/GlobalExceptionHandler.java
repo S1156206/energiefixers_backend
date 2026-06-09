@@ -1,5 +1,7 @@
 package com.energiefixers.backend.shared;
 
+import java.time.LocalDateTime;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,6 +14,12 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(CooldownException.class)
+    public ResponseEntity<ApiResponse<LocalDateTime>> handleCooldown(CooldownException ex) {
+        log.warn("Cooldown active: {}", ex.getMessage());
+        return ResponseEntity.status(429).body(ApiResponse.error("Cooldown active", ex.getNextAvailableAt()));
+    }
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotFound(NotFoundException ex) {
