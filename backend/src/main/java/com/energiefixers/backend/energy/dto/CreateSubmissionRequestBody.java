@@ -6,5 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CreateSubmissionRequestBody {
+    private Long propertyId;
     private String email;
 }

@@ -10,6 +10,7 @@ import com.energiefixers.backend.energy.repository.PropertySubmissionRequestRepo
 import com.energiefixers.backend.invitation.service.InvitationService;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.repository.PropertyRepository;
+import com.energiefixers.backend.shared.CooldownException;
 import com.energiefixers.backend.shared.MailService;
 import com.energiefixers.backend.shared.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -18,12 +19,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class SubmissionService {
+
+    public static final Duration COOLDOWN = Duration.ofHours(24);
 
     private final PropertySubmissionRequestRepository submissionRequestRepository;
     private final PropertyRepository propertyRepository;
@@ -32,14 +36,23 @@ public class SubmissionService {
     private final InvitationService invitationService;
 
     @Transactional
-    public void createSubmissionRequest(Long propertyId, String email) {
+    public PropertySubmissionRequest createSubmissionRequest(Long propertyId, String email) {
         Property property = propertyRepository.findById(propertyId)
             .orElseThrow(() -> new NotFoundException("Property not found: " + propertyId));
 
         submissionRequestRepository
+            .findTopByPropertyIdOrderByCreatedAtDesc(propertyId)
+            .ifPresent(last -> {
+                LocalDateTime nextAvailable = last.getCreatedAt().plus(COOLDOWN);
+                if (LocalDateTime.now().isBefore(nextAvailable)) {
+                    throw new CooldownException(nextAvailable);
+                }
+            });
+
+        submissionRequestRepository
             .findAllByPropertyIdAndSubmittedAtIsNull(propertyId)
             .forEach(pending -> {
-                pending.setExpiresAt(LocalDateTime.now());
+                pending.setExpiresAt(LocalDateTime.now().minusSeconds(1));
                 submissionRequestRepository.save(pending);
             });
 
@@ -49,8 +62,9 @@ public class SubmissionService {
         request.setRecipientEmail(email);
         request.setExpiresAt(LocalDateTime.now().plusDays(90));
 
-        submissionRequestRepository.save(request);
-        mailService.sendSubmissionRequest(email, request.getToken(), buildAddress(property));
+        PropertySubmissionRequest saved = submissionRequestRepository.save(request);
+        mailService.sendSubmissionRequest(email, saved.getToken(), buildAddress(property));
+        return saved;
     }
 
     public SubmissionInfoResponse getSubmissionInfo(String token) {

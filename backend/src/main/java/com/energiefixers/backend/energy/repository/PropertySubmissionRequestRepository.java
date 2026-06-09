@@ -10,4 +10,5 @@ public interface PropertySubmissionRequestRepository extends JpaRepository<Prope
     Optional<PropertySubmissionRequest> findByToken(String token);
     List<PropertySubmissionRequest> findAllByPropertyId(Long propertyId);
     List<PropertySubmissionRequest> findAllByPropertyIdAndSubmittedAtIsNull(Long propertyId);
+    Optional<PropertySubmissionRequest> findTopByPropertyIdOrderByCreatedAtDesc(Long propertyId);
 }
