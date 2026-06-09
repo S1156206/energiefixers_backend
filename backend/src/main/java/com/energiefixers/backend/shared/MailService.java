@@ -4,14 +4,20 @@ import com.energiefixers.backend.invitation.models.Invitation;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class MailService {
+
+    private static final Logger log = LoggerFactory.getLogger(MailService.class);
 
     private final JavaMailSender mailSender;
     private final EmailOptOutService emailOptOutService;
@@ -22,6 +28,7 @@ public class MailService {
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
+    @Async
     public void sendInvitation(Invitation invitation) {
         if (invitation.getRecipientEmail() == null || invitation.getRecipientEmail().isBlank()) {
             return;
@@ -49,11 +56,12 @@ public class MailService {
 
             helper.setText(body);
             mailSender.send(message);
-        } catch (MessagingException ex) {
-            throw new RuntimeException("Failed to send invitation email", ex);
+        } catch (MessagingException | MailException ex) {
+            log.error("Failed to send invitation email to {}: {}", invitation.getRecipientEmail(), ex.getMessage());
         }
     }
 
+    @Async
     public void sendSubmissionRequest(String recipientEmail, String token, String propertyAddress) {
         if (emailOptOutService.isOptedOut(recipientEmail)) {
             return;
@@ -80,8 +88,8 @@ public class MailService {
 
             helper.setText(body);
             mailSender.send(message);
-        } catch (MessagingException ex) {
-            throw new RuntimeException("Failed to send submission request email", ex);
+        } catch (MessagingException | MailException ex) {
+            log.error("Failed to send submission request email to {}: {}", recipientEmail, ex.getMessage());
         }
     }
 }
