@@ -29,6 +29,8 @@ public class PropertyResponse {
     private Long regionId;
     private String tenantEmail;
     private EmailStatus emailStatus;
+    private Long fixRoundId;
+    private String fixRoundName;
     private List<InvitationSummary> invitations;
     private List<SubmissionRequestSummary> submissionRequests;
     private List<FixVisitResponse> fixVisits;
@@ -48,6 +50,10 @@ public class PropertyResponse {
         response.setEnergyLabelAfter(property.getEnergyLabelAfter());
         response.setRegionId(property.getRegion().getId());
         response.setTenantEmail(property.getTenantEmail());
+        if (property.getFixRound() != null) {
+            response.setFixRoundId(property.getFixRound().getId());
+            response.setFixRoundName(property.getFixRound().getName());
+        }
         response.setInvitations(
                 property.getInvitations() == null ? List.of()
                         : property.getInvitations().stream()
