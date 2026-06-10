@@ -56,6 +56,10 @@ public class Property {
     @JoinColumn(name = "region_id")
     private Region region;
 
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "fix_round_id")
+    private FixRound fixRound;
+
     /** Current tenant who enters data via the dashboard */
     @OneToOne(mappedBy = "property")
     private User tenant;
