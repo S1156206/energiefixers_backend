@@ -44,14 +44,17 @@ public class PropertyController {
         return ResponseEntity.ok(ApiResponse.success(MyPropertyResponse.from(property)));
     }
 
-    /** Staff/admin: get all properties, optionally filtered by region */
+    /** Staff/admin: get all properties, optionally filtered by region or fix round */
     @GetMapping
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<PropertySummaryResponse>>> getAll(
-            @RequestParam(required = false) Long regionId) {
-        List<Property> result = regionId != null
-            ? propertyService.getAllByRegion(regionId)
-            : propertyService.getAll();
+            @RequestParam(required = false) Long regionId,
+            @RequestParam(required = false) Long fixRoundId) {
+        List<Property> result = fixRoundId != null
+            ? propertyService.getAllByFixRound(fixRoundId)
+            : regionId != null
+                ? propertyService.getAllByRegion(regionId)
+                : propertyService.getAll();
         List<PropertySummaryResponse> responses = result.stream()
                 .map(p -> enrichedSummary(PropertySummaryResponse.from(p), p.getTenantEmail()))
                 .collect(Collectors.toList());

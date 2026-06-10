@@ -5,15 +5,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.energiefixers.backend.property.dto.PropertyRequest;
+import com.energiefixers.backend.property.models.FixRound;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.models.Region;
+import com.energiefixers.backend.property.repository.FixRoundRepository;
 import com.energiefixers.backend.property.repository.PropertyRepository;
 import com.energiefixers.backend.property.repository.RegionRepository;
 import com.energiefixers.backend.shared.NotFoundException;
 import com.energiefixers.backend.user.models.User;
 import com.energiefixers.backend.user.repository.UserRepository;
-
-import java.util.Optional;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +25,7 @@ public class PropertyService {
     private final PropertyRepository propertyRepository;
     private final RegionRepository regionRepository;
     private final UserRepository userRepository;
+    private final FixRoundRepository fixRoundRepository;
 
     public Property getMyProperty(Long userId) {
         User user = userRepository.findById(userId)
@@ -41,6 +42,10 @@ public class PropertyService {
 
     public List<Property> getAllByRegion(Long regionId) {
         return propertyRepository.findAllByRegionId(regionId);
+    }
+
+    public List<Property> getAllByFixRound(Long fixRoundId) {
+        return propertyRepository.findAllByFixRoundId(fixRoundId);
     }
 
     public Property getById(Long id) {
@@ -61,7 +66,15 @@ public class PropertyService {
         property.setTenantEmail(request.getTenantEmail());
         property.setRegion(region);
 
-       return propertyRepository.save(property);
+        if (request.getFixRoundId() != null) {
+            FixRound round = fixRoundRepository.findById(request.getFixRoundId())
+                    .orElseThrow(() -> new NotFoundException("Fixronde niet gevonden: " + request.getFixRoundId()));
+            property.setFixRound(round);
+        } else {
+            fixRoundRepository.findByCurrentTrue().ifPresent(property::setFixRound);
+        }
+
+        return propertyRepository.save(property);
     }
 
     @Transactional
@@ -80,6 +93,14 @@ public class PropertyService {
             Region region = regionRepository.findById(request.getRegionId())
                 .orElseThrow(() -> new NotFoundException("Region not found: " + request.getRegionId()));
             property.setRegion(region);
+        }
+
+        if (request.getFixRoundId() != null) {
+            FixRound round = fixRoundRepository.findById(request.getFixRoundId())
+                    .orElseThrow(() -> new NotFoundException("Fixronde niet gevonden: " + request.getFixRoundId()));
+            property.setFixRound(round);
+        } else {
+            property.setFixRound(null);
         }
 
         return propertyRepository.save(property);
