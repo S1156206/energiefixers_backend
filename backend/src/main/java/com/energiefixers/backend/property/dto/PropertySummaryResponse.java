@@ -20,6 +20,8 @@ public class PropertySummaryResponse {
     private EmailStatus emailStatus;
     private boolean hasInvitations;
     private boolean hasSubmissionRequests;
+    private Long fixRoundId;
+    private String fixRoundName;
 
     public static PropertySummaryResponse from(Property property) {
         PropertySummaryResponse response = new PropertySummaryResponse();
@@ -32,6 +34,10 @@ public class PropertySummaryResponse {
         response.setTenantEmail(property.getTenantEmail());
         response.setHasInvitations(property.getInvitations() != null && !property.getInvitations().isEmpty());
         response.setHasSubmissionRequests(property.getSubmissionRequests() != null && !property.getSubmissionRequests().isEmpty());
+        if (property.getFixRound() != null) {
+            response.setFixRoundId(property.getFixRound().getId());
+            response.setFixRoundName(property.getFixRound().getName());
+        }
         return response;
     }
 }
