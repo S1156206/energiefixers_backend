@@ -4,8 +4,10 @@ import com.energiefixers.backend.energy.models.EnergyReading;
 import com.energiefixers.backend.energy.repository.EnergyReadingRepository;
 import com.energiefixers.backend.invitation.models.Invitation;
 import com.energiefixers.backend.invitation.repository.InvitationRepository;
+import com.energiefixers.backend.property.models.FixRound;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.models.Region;
+import com.energiefixers.backend.property.repository.FixRoundRepository;
 import com.energiefixers.backend.property.repository.PropertyRepository;
 import com.energiefixers.backend.property.repository.RegionRepository;
 import com.energiefixers.backend.user.models.Role;
@@ -39,6 +41,7 @@ public class DataSeeder implements ApplicationRunner {
     private final FixVisitRepository fixVisitRepository;
     private final EnergyReadingRepository energyReadingRepository;
     private final InvitationRepository invitationRepository;
+    private final FixRoundRepository fixRoundRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -53,10 +56,16 @@ public class DataSeeder implements ApplicationRunner {
         Region zuid   = createRegion("Leiden-Zuid",    "2321");
         Region centrum = createRegion("Leiden-Centrum", "2311");
 
-        Property prop1 = createProperty("Rijnsburgerweg", "14",  null, "2316HA", Property.EnergyLabel.E, Property.EnergyLabel.C, noord);
-        Property prop2 = createProperty("Tjalklaan",       "7",  "B",  "2316KP", Property.EnergyLabel.F, Property.EnergyLabel.D, noord);
-        Property prop3 = createProperty("Kettingstraat",   "22", null, "2321BK", Property.EnergyLabel.D, null,                    zuid);
-        Property prop4 = createProperty("Lange Mare",      "45", null, "2312GT", Property.EnergyLabel.G, null,                    centrum);
+        FixRound ronde1 = createFixRound("Ronde 1", LocalDate.of(2023, 1,  1),  LocalDate.of(2023, 3, 31), false);
+        FixRound ronde2 = createFixRound("Ronde 2", LocalDate.of(2023, 7,  1),  LocalDate.of(2023, 8, 31), false);
+        FixRound ronde3 = createFixRound("Ronde 3", LocalDate.of(2024, 2,  1),  LocalDate.of(2024, 3, 31), false);
+        FixRound ronde4 = createFixRound("Ronde 4", LocalDate.of(2024, 5,  1),  LocalDate.of(2024, 6, 30), false);
+        FixRound ronde5 = createFixRound("Ronde 5", LocalDate.of(2024, 9,  1),  LocalDate.of(2024, 10, 31), true);
+
+        Property prop1 = createProperty("Rijnsburgerweg", "14",  null, "2316HA", Property.EnergyLabel.E, Property.EnergyLabel.C, noord,   ronde3);
+        Property prop2 = createProperty("Tjalklaan",       "7",  "B",  "2316KP", Property.EnergyLabel.F, Property.EnergyLabel.D, noord,   ronde4);
+        Property prop3 = createProperty("Kettingstraat",   "22", null, "2321BK", Property.EnergyLabel.D, null,                    zuid,    ronde5);
+        Property prop4 = createProperty("Lange Mare",      "45", null, "2312GT", Property.EnergyLabel.G, null,                    centrum, ronde5);
 
         createUser("admin@energiefixers.nl",    "Admin@1234",   Role.ADMIN,  "Admin",    null);
         createUser("staff@energiefixers.nl",    "Staff@1234",   Role.STAFF,  "Pieter",   null);
@@ -141,9 +150,18 @@ public class DataSeeder implements ApplicationRunner {
         return regionRepository.save(r);
     }
 
+    private FixRound createFixRound(String name, LocalDate startDate, LocalDate endDate, boolean current) {
+        FixRound r = new FixRound();
+        r.setName(name);
+        r.setStartDate(startDate);
+        r.setEndDate(endDate);
+        r.setCurrent(current);
+        return fixRoundRepository.save(r);
+    }
+
     private Property createProperty(String street, String houseNumber, String suffix,
                                     String postcode, Property.EnergyLabel before,
-                                    Property.EnergyLabel after, Region region) {
+                                    Property.EnergyLabel after, Region region, FixRound fixRound) {
         Property p = new Property();
         p.setStreet(street);
         p.setHouseNumber(houseNumber);
@@ -152,6 +170,7 @@ public class DataSeeder implements ApplicationRunner {
         p.setEnergyLabelBefore(before);
         p.setEnergyLabelAfter(after);
         p.setRegion(region);
+        p.setFixRound(fixRound);
         return propertyRepository.save(p);
     }
 
