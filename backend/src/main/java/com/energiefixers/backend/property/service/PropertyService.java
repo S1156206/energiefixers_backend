@@ -59,7 +59,7 @@ public class PropertyService {
         property.setHouseNumber(request.getHouseNumber());
         property.setHouseNumberSuffix(request.getHouseNumberSuffix());
         property.setPostcode(request.getPostcode());
-        property.setEnergyLabelBefore(request.getEnergyLabelBefore());
+        // property.setEnergyLabelBefore(request.getEnergyLabelBefore());
         property.setTenantEmail(request.getTenantEmail());
         property.setRegion(regionRepository.findByPostcode(request.getPostcode()).orElse(null));
 
@@ -82,8 +82,8 @@ public class PropertyService {
         property.setHouseNumber(request.getHouseNumber());
         property.setHouseNumberSuffix(request.getHouseNumberSuffix());
         property.setPostcode(request.getPostcode());
-        property.setEnergyLabelBefore(request.getEnergyLabelBefore());
-        property.setEnergyLabelAfter(request.getEnergyLabelAfter());
+        // property.setEnergyLabelBefore(request.getEnergyLabelBefore());
+        // property.setEnergyLabelAfter(request.getEnergyLabelAfter());
         property.setTenantEmail(request.getTenantEmail());
         property.setRegion(regionRepository.findByPostcode(request.getPostcode()).orElse(null));
 
