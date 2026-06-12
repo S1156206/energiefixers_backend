@@ -4,15 +4,17 @@ import com.energiefixers.backend.property.models.Region;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 
+import java.util.Set;
+
 @Getter
 @AllArgsConstructor
 public class RegionResponse {
 
     private Long id;
     private String name;
-    private String postcodePrefix;
+    private Set<String> postcodePrefixes;
 
     public static RegionResponse from(Region region) {
-        return new RegionResponse(region.getId(), region.getName(), region.getPostcodePrefix());
+        return new RegionResponse(region.getId(), region.getName(), region.getPostcodePrefixes());
     }
 }
