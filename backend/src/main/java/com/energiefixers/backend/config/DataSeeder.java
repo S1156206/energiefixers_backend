@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -52,9 +53,9 @@ public class DataSeeder implements ApplicationRunner {
         }
         log.info("DataSeeder: seeding test data...");
 
-        Region noord  = createRegion("Leiden-Noord",   "2316");
-        Region zuid   = createRegion("Leiden-Zuid",    "2321");
-        Region centrum = createRegion("Leiden-Centrum", "2311");
+        Region noord   = createRegion("Leiden-Noord",   Set.of("2316", "2317"));
+        Region zuid    = createRegion("Leiden-Zuid",    Set.of("2321", "2322", "2323"));
+        Region centrum = createRegion("Leiden-Centrum", Set.of("2311", "2312", "2313"));
 
         FixRound ronde1 = createFixRound("Ronde 1", LocalDate.of(2023, 1,  1),  LocalDate.of(2023, 3, 31), false);
         FixRound ronde2 = createFixRound("Ronde 2", LocalDate.of(2023, 7,  1),  LocalDate.of(2023, 8, 31), false);
@@ -143,10 +144,10 @@ public class DataSeeder implements ApplicationRunner {
         log.info("DataSeeder: seeding completed.");
     }
 
-    private Region createRegion(String name, String postcodePrefix) {
+    private Region createRegion(String name, Set<String> postcodePrefixes) {
         Region r = new Region();
         r.setName(name);
-        r.setPostcodePrefix(postcodePrefix);
+        r.setPostcodePrefixes(postcodePrefixes);
         return regionRepository.save(r);
     }
 
