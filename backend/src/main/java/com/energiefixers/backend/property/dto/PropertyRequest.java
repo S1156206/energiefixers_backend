@@ -11,8 +11,8 @@ public class PropertyRequest {
     private String houseNumber;
     private String houseNumberSuffix;
     private String postcode;
-    private EnergyLabel energyLabelBefore;
-    private EnergyLabel energyLabelAfter;
+    // private EnergyLabel energyLabelBefore;
+    // private EnergyLabel energyLabelAfter;
     private String tenantEmail;
     private Long fixRoundId;
 }
