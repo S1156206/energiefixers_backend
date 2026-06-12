@@ -3,6 +3,8 @@ package com.energiefixers.backend.property.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Comparator;
+
 import com.energiefixers.backend.property.dto.PropertyResponse.EmailStatus;
 import com.energiefixers.backend.property.models.Property;
 
@@ -18,8 +20,8 @@ public class PropertySummaryResponse {
     private Long regionId;
     private String tenantEmail;
     private EmailStatus emailStatus;
-    private boolean hasInvitations;
-    private boolean hasSubmissionRequests;
+    private String invitationStatus;
+    private boolean hasEnergyData;
     private Long fixRoundId;
     private String fixRoundName;
 
@@ -32,8 +34,17 @@ public class PropertySummaryResponse {
         response.setPostcode(property.getPostcode());
         response.setRegionId(property.getRegion().getId());
         response.setTenantEmail(property.getTenantEmail());
-        response.setHasInvitations(property.getInvitations() != null && !property.getInvitations().isEmpty());
-        response.setHasSubmissionRequests(property.getSubmissionRequests() != null && !property.getSubmissionRequests().isEmpty());
+
+        if (property.getInvitations() != null && !property.getInvitations().isEmpty()) {
+            property.getInvitations().stream()
+                .max(Comparator.comparing(i -> i.getSentAt()))
+                .ifPresent(latest -> response.setInvitationStatus(latest.getStatus().name()));
+        } else {
+            response.setInvitationStatus("NOT_INVITED");
+        }
+
+        response.setHasEnergyData(property.getEnergyReadings() != null && !property.getEnergyReadings().isEmpty());
+
         if (property.getFixRound() != null) {
             response.setFixRoundId(property.getFixRound().getId());
             response.setFixRoundName(property.getFixRound().getName());
