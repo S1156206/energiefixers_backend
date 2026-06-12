@@ -13,7 +13,6 @@ public class PropertyRequest {
     private String postcode;
     private EnergyLabel energyLabelBefore;
     private EnergyLabel energyLabelAfter;
-    private Long regionId;
     private String tenantEmail;
     private Long fixRoundId;
 }
