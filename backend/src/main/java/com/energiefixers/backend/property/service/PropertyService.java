@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.energiefixers.backend.property.dto.PropertyRequest;
 import com.energiefixers.backend.property.models.FixRound;
 import com.energiefixers.backend.property.models.Property;
-import com.energiefixers.backend.property.models.Region;
 import com.energiefixers.backend.property.repository.FixRoundRepository;
 import com.energiefixers.backend.property.repository.PropertyRepository;
 import com.energiefixers.backend.property.repository.RegionRepository;
@@ -55,8 +54,6 @@ public class PropertyService {
 
     @Transactional
     public Property create(PropertyRequest request) {
-        Region region = regionRepository.findById(request.getRegionId()).orElseThrow(() -> new NotFoundException("Region with id not found: " + request.getRegionId()));
-
         Property property = new Property();
         property.setStreet(request.getStreet());
         property.setHouseNumber(request.getHouseNumber());
@@ -64,7 +61,7 @@ public class PropertyService {
         property.setPostcode(request.getPostcode());
         property.setEnergyLabelBefore(request.getEnergyLabelBefore());
         property.setTenantEmail(request.getTenantEmail());
-        property.setRegion(region);
+        property.setRegion(regionRepository.findByPostcode(request.getPostcode()).orElse(null));
 
         if (request.getFixRoundId() != null) {
             FixRound round = fixRoundRepository.findById(request.getFixRoundId())
@@ -88,12 +85,7 @@ public class PropertyService {
         property.setEnergyLabelBefore(request.getEnergyLabelBefore());
         property.setEnergyLabelAfter(request.getEnergyLabelAfter());
         property.setTenantEmail(request.getTenantEmail());
-
-        if (request.getRegionId() != null) {
-            Region region = regionRepository.findById(request.getRegionId())
-                .orElseThrow(() -> new NotFoundException("Region not found: " + request.getRegionId()));
-            property.setRegion(region);
-        }
+        property.setRegion(regionRepository.findByPostcode(request.getPostcode()).orElse(null));
 
         if (request.getFixRoundId() != null) {
             FixRound round = fixRoundRepository.findById(request.getFixRoundId())
