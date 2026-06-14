@@ -77,4 +77,16 @@ public interface FixVisitRepository extends JpaRepository<FixVisit, Long> {
     List<Object[]> getSavingsByProperty(@Param("regionId") Long regionId,
                                         @Param("from") LocalDate from,
                                         @Param("to") LocalDate to);
+
+    @Query("SELECT im.material.name, im.material.category, SUM(im.quantity) " +
+           "FROM FixVisit fv JOIN fv.installedMaterials im " +
+           "GROUP BY im.material.name, im.material.category " +
+           "ORDER BY SUM(im.quantity) DESC")
+    List<Object[]> sumInstalledQuantityByMaterial();
+
+    @Query("SELECT im.material.name, im.material.category, im.material.priceEuros, SUM(im.quantity) " +
+           "FROM FixVisit fv JOIN fv.installedMaterials im " +
+           "GROUP BY im.material.name, im.material.category, im.material.priceEuros " +
+           "ORDER BY im.material.name")
+    List<Object[]> getMaterialCostSummary();
 }
