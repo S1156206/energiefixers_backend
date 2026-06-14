@@ -1,7 +1,9 @@
 package com.energiefixers.backend.visit.controller;
 
 import com.energiefixers.backend.shared.ApiResponse;
+import com.energiefixers.backend.visit.dto.MaterialCostSummaryResponse;
 import com.energiefixers.backend.visit.dto.MaterialResponse;
+import com.energiefixers.backend.visit.repository.FixVisitRepository;
 import com.energiefixers.backend.visit.repository.MaterialRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,6 +22,7 @@ import java.util.stream.Collectors;
 public class MaterialController {
 
     private final MaterialRepository materialRepository;
+    private final FixVisitRepository fixVisitRepository;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
@@ -27,5 +31,23 @@ public class MaterialController {
                 .map(MaterialResponse::from)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success(materials));
+    }
+
+    @GetMapping("/cost-summary")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<MaterialCostSummaryResponse>>> getCostSummary() {
+        List<MaterialCostSummaryResponse> summary = fixVisitRepository.getMaterialCostSummary().stream()
+                .map(row -> {
+                    String name = (String) row[0];
+                    String category = row[1].toString();
+                    BigDecimal unitPrice = (BigDecimal) row[2];
+                    long qty = ((Number) row[3]).longValue();
+                    BigDecimal totalCost = unitPrice != null
+                            ? unitPrice.multiply(BigDecimal.valueOf(qty))
+                            : BigDecimal.ZERO;
+                    return new MaterialCostSummaryResponse(name, category, unitPrice, qty, totalCost);
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(summary));
     }
 }
