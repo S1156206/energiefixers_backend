@@ -84,6 +84,16 @@ public interface FixVisitRepository extends JpaRepository<FixVisit, Long> {
            "ORDER BY SUM(im.quantity) DESC")
     List<Object[]> sumInstalledQuantityByMaterial();
 
+    @Query("SELECT im.material.name, im.material.category, SUM(im.quantity) " +
+           "FROM FixVisit fv JOIN fv.installedMaterials im " +
+           "WHERE (:regionId IS NULL OR fv.property.region.id = :regionId) " +
+           "AND (:fixRoundId IS NULL OR fv.property.fixRound.id = :fixRoundId) " +
+           "GROUP BY im.material.name, im.material.category " +
+           "ORDER BY SUM(im.quantity) DESC")
+    List<Object[]> sumInstalledQuantityByMaterialFiltered(
+            @Param("regionId") Long regionId,
+            @Param("fixRoundId") Long fixRoundId);
+
     @Query("SELECT im.material.name, im.material.category, im.material.priceEuros, SUM(im.quantity) " +
            "FROM FixVisit fv JOIN fv.installedMaterials im " +
            "GROUP BY im.material.name, im.material.category, im.material.priceEuros " +
