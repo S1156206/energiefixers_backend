@@ -10,6 +10,9 @@ import org.springframework.data.repository.query.Param;
 import com.energiefixers.backend.visit.models.Material;
 
 public interface MaterialRepository extends JpaRepository<Material, Long> {
+
+    @Query("SELECT COUNT(im) > 0 FROM InstalledMaterial im WHERE im.material.id = :id")
+    boolean isUsedInAnyVisit(@Param("id") Long id);
     @Query("SELECT m.id, m.name, m.category, SUM(im.quantity), SUM(im.quantity * m.priceEuros) " +
        "FROM Material m LEFT JOIN InstalledMaterial im ON im.material = m " +
        "GROUP BY m.id, m.name, m.category")
