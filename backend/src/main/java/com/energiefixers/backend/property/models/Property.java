@@ -52,8 +52,8 @@ public class Property {
     @Column(name = "tenant_email")
     private String tenantEmail;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "region_id")
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "region_id", nullable = true)
     private Region region;
 
     /** Current tenant who enters data via the dashboard */
