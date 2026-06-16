@@ -41,7 +41,7 @@ public class PropertyResponse {
         response.setPostcode(property.getPostcode());
         response.setEnergyLabelBefore(property.getEnergyLabelBefore());
         response.setEnergyLabelAfter(property.getEnergyLabelAfter());
-        response.setRegionId(property.getRegion().getId());
+        response.setRegionId(property.getRegion() == null ? null : property.getRegion().getId());
         response.setTenantEmail(property.getTenantEmail());
         response.setInvitations(
             property.getInvitations() == null ? List.of() :
