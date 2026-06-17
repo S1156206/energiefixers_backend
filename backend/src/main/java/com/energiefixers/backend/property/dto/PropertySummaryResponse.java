@@ -36,7 +36,7 @@ public class PropertySummaryResponse {
         response.setHouseNumber(property.getHouseNumber());
         response.setHouseNumberSuffix(property.getHouseNumberSuffix());
         response.setPostcode(property.getPostcode());
-        response.setRegionId(property.getRegion().getId());
+        response.setRegionId(property.getRegion() == null ? null : property.getRegion().getId());
         response.setTenantEmail(property.getTenantEmail());
         response.setTenantStatus(resolveTenantStatus(property));
         if (property.getFixRound() != null) {
