@@ -99,4 +99,10 @@ public interface FixVisitRepository extends JpaRepository<FixVisit, Long> {
            "GROUP BY im.material.name, im.material.category, im.material.priceEuros " +
            "ORDER BY im.material.name")
     List<Object[]> getMaterialCostSummary();
+
+    @Query("SELECT COALESCE(SUM(im.quantity * m.estimatedGasSavingM3), 0), " +
+           "COALESCE(SUM(im.quantity * m.estimatedElectricitySavingKwh), 0) " +
+           "FROM FixVisit fv LEFT JOIN fv.installedMaterials im LEFT JOIN im.material m " +
+           "WHERE fv.property.id = :propertyId")
+    Object[] sumEstimatedSavingsByPropertyId(@Param("propertyId") Long propertyId);
 }

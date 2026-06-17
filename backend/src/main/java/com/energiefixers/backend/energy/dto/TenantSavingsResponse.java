@@ -12,14 +12,43 @@ public class TenantSavingsResponse {
 
     private LocalDate firstVisitDate;
 
-    private BigDecimal gasSavingsM3;
-    private BigDecimal electricitySavingsKwh;
-    private BigDecimal costSavingsEuros;
+    /** True once both before- and after-visit readings are present. */
+    private boolean hasMeasuredData;
 
-    private LocalDate baselinePeriodStart;
-    private LocalDate baselinePeriodEnd;
-    private LocalDate postVisitPeriodStart;
-    private LocalDate postVisitPeriodEnd;
+    // --- Estimates (always present after a fix visit) ---
 
-    private boolean hasSavingsData;
+    /** Annual gas savings based on installed materials (m³/year). */
+    private BigDecimal estimatedAnnualGasSavingsM3;
+
+    /** Annual electricity savings based on installed materials (kWh/year). */
+    private BigDecimal estimatedAnnualElectricitySavingsKwh;
+
+    /** Running estimate of gas already saved since the last fix visit. */
+    private BigDecimal estimatedTotalGasSavedToDateM3;
+
+    /** Running estimate of electricity already saved since the last fix visit. */
+    private BigDecimal estimatedTotalElectricitySavedToDateKwh;
+
+    // --- Measured (null when hasMeasuredData = false) ---
+
+    /** Measured annual gas saving: (avg daily before − avg daily after) × 365. */
+    private BigDecimal annualGasSavingsM3;
+
+    /** Measured annual electricity saving. */
+    private BigDecimal annualElectricitySavingsKwh;
+
+    /** Measured annual cost saving. */
+    private BigDecimal annualCostSavingsEuros;
+
+    /** Cumulative gas actually saved across all post-visit readings. */
+    private BigDecimal totalGasSavedToDateM3;
+
+    /** Cumulative electricity actually saved across all post-visit readings. */
+    private BigDecimal totalElectricitySavedToDateKwh;
+
+    /** Cumulative cost actually saved across all post-visit readings. */
+    private BigDecimal totalCostSavedToDateEuros;
+
+    private int readingsBeforeCount;
+    private int readingsAfterCount;
 }

@@ -17,10 +17,10 @@ import com.energiefixers.backend.visit.models.FixVisit;
 import com.energiefixers.backend.visit.repository.FixVisitRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.Comparator;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +29,7 @@ public class EnergyReadingService {
     private final EnergyReadingRepository energyReadingRepository;
     private final UserRepository userRepository;
     private final FixVisitRepository fixVisitRepository;
+    private final SavingsCalculator savingsCalculator;
 
     public List<EnergyReading> findForTenant(Long userId) {
         User user = userRepository.findById(userId)
@@ -136,34 +137,53 @@ public class EnergyReadingService {
                 .max(LocalDate::compareTo)
                 .orElseThrow();
 
+        // Material-based estimates — always available
+        Object[] est = fixVisitRepository.sumEstimatedSavingsByPropertyId(propertyId);
+        BigDecimal estimatedAnnualGas  = toBigDecimal(est[0]);
+        BigDecimal estimatedAnnualElec = toBigDecimal(est[1]);
+        long daysSinceLastVisit = ChronoUnit.DAYS.between(lastVisit, LocalDate.now());
+        BigDecimal daysFraction = BigDecimal.valueOf(daysSinceLastVisit)
+                .divide(BigDecimal.valueOf(365), 10, RoundingMode.HALF_UP);
+        BigDecimal estimatedToDateGas  = estimatedAnnualGas.multiply(daysFraction).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal estimatedToDateElec = estimatedAnnualElec.multiply(daysFraction).setScale(2, RoundingMode.HALF_UP);
+
+        // Split readings into before/after the fix visit window
         List<EnergyReading> readings = energyReadingRepository.findAllByPropertyIdOrderByPeriodEndAsc(propertyId);
-
-        Optional<EnergyReading> baseline = readings.stream()
+        List<EnergyReading> beforeReadings = readings.stream()
                 .filter(r -> r.getPeriodEnd().isBefore(firstVisit))
-                .max(Comparator.comparing(EnergyReading::getPeriodEnd));
-
-        Optional<EnergyReading> postVisit = readings.stream()
+                .toList();
+        List<EnergyReading> afterReadings = readings.stream()
                 .filter(r -> r.getPeriodStart().isAfter(lastVisit))
-                .max(Comparator.comparing(EnergyReading::getPeriodEnd));
+                .toList();
 
-        if (baseline.isEmpty() || postVisit.isEmpty()) {
-            return new TenantSavingsResponse(firstVisit, null, null, null, null, null, null, null, false);
+        if (beforeReadings.isEmpty() || afterReadings.isEmpty()) {
+            return new TenantSavingsResponse(
+                    firstVisit, false,
+                    estimatedAnnualGas, estimatedAnnualElec, estimatedToDateGas, estimatedToDateElec,
+                    null, null, null, null, null, null,
+                    beforeReadings.size(), afterReadings.size());
         }
 
-        EnergyReading before = baseline.get();
-        EnergyReading after = postVisit.get();
+        BigDecimal avgDailyGasBefore  = savingsCalculator.averageDailyRate(beforeReadings, EnergyReading::getGasUsageM3);
+        BigDecimal avgDailyElecBefore = savingsCalculator.averageDailyRate(beforeReadings, EnergyReading::getElectricityUsageKwh);
+        BigDecimal avgDailyCostBefore = savingsCalculator.averageDailyRate(beforeReadings, EnergyReading::getTotalCostEuros);
+
+        BigDecimal annualGas  = savingsCalculator.annualize(subtract(avgDailyGasBefore,  savingsCalculator.averageDailyRate(afterReadings, EnergyReading::getGasUsageM3)));
+        BigDecimal annualElec = savingsCalculator.annualize(subtract(avgDailyElecBefore, savingsCalculator.averageDailyRate(afterReadings, EnergyReading::getElectricityUsageKwh)));
+        BigDecimal annualCost = savingsCalculator.annualize(subtract(avgDailyCostBefore, savingsCalculator.averageDailyRate(afterReadings, EnergyReading::getTotalCostEuros)));
+
+        // Same formula as estimates: annualRate × (daysSinceFixVisit / 365)
+        // This keeps the "to date" counter growing every day, consistent with the estimated track.
+        BigDecimal totalGasSaved  = annualGas  != null ? annualGas.multiply(daysFraction).setScale(2, RoundingMode.HALF_UP)  : null;
+        BigDecimal totalElecSaved = annualElec != null ? annualElec.multiply(daysFraction).setScale(2, RoundingMode.HALF_UP) : null;
+        BigDecimal totalCostSaved = annualCost != null ? annualCost.multiply(daysFraction).setScale(2, RoundingMode.HALF_UP) : null;
 
         return new TenantSavingsResponse(
-                firstVisit,
-                subtract(before.getGasUsageM3(), after.getGasUsageM3()),
-                subtract(before.getElectricityUsageKwh(), after.getElectricityUsageKwh()),
-                subtract(before.getTotalCostEuros(), after.getTotalCostEuros()),
-                before.getPeriodStart(),
-                before.getPeriodEnd(),
-                after.getPeriodStart(),
-                after.getPeriodEnd(),
-                true
-        );
+                firstVisit, true,
+                estimatedAnnualGas, estimatedAnnualElec, estimatedToDateGas, estimatedToDateElec,
+                annualGas, annualElec, annualCost,
+                totalGasSaved, totalElecSaved, totalCostSaved,
+                beforeReadings.size(), afterReadings.size());
     }
 
     private void validatePeriod(LocalDate start, LocalDate end) {
@@ -183,5 +203,11 @@ public class EnergyReadingService {
     private BigDecimal subtract(BigDecimal a, BigDecimal b) {
         if (a == null || b == null) return null;
         return a.subtract(b);
+    }
+
+    private BigDecimal toBigDecimal(Object value) {
+        if (value == null) return BigDecimal.ZERO;
+        if (value instanceof BigDecimal bd) return bd;
+        return new BigDecimal(value.toString());
     }
 }

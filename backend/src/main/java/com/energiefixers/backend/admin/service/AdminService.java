@@ -3,6 +3,7 @@ package com.energiefixers.backend.admin.service;
 import com.energiefixers.backend.admin.dto.*;
 import com.energiefixers.backend.energy.models.EnergyReading;
 import com.energiefixers.backend.energy.repository.EnergyReadingRepository;
+import com.energiefixers.backend.energy.service.SavingsCalculator;
 import com.energiefixers.backend.visit.models.FixVisit;
 import com.energiefixers.backend.visit.repository.FixVisitRepository;
 import com.energiefixers.backend.visit.repository.MaterialRepository;
@@ -21,6 +22,7 @@ public class AdminService {
     private final FixVisitRepository fixVisitRepository;
     private final MaterialRepository materialRepository;
     private final EnergyReadingRepository energyReadingRepository;
+    private final SavingsCalculator savingsCalculator;
 
     public SavingsSummaryResponse getSummary(LocalDate from, LocalDate to) {
         List<PropertySavingsEntry> entries = getSavingsByProperty(null, from, to);
@@ -145,7 +147,7 @@ public class AdminService {
     }
 
     private ActualSavings computeActualSavings(List<EnergyReading> readings, List<FixVisit> visits) {
-        if (visits.isEmpty() || readings.size() < 2) return ActualSavings.empty();
+        if (visits.isEmpty()) return ActualSavings.empty();
 
         LocalDate firstVisit = visits.stream()
                 .map(FixVisit::getVisitDate)
@@ -158,24 +160,24 @@ public class AdminService {
 
         if (firstVisit == null) return ActualSavings.empty();
 
-        Optional<EnergyReading> baseline = readings.stream()
+        List<EnergyReading> beforeReadings = readings.stream()
                 .filter(r -> r.getPeriodEnd().isBefore(firstVisit))
-                .max(Comparator.comparing(EnergyReading::getPeriodEnd));
-
-        Optional<EnergyReading> postVisit = readings.stream()
+                .toList();
+        List<EnergyReading> afterReadings = readings.stream()
                 .filter(r -> r.getPeriodStart().isAfter(lastVisit))
-                .max(Comparator.comparing(EnergyReading::getPeriodEnd));
+                .toList();
 
-        if (baseline.isEmpty() || postVisit.isEmpty()) return ActualSavings.empty();
+        if (beforeReadings.isEmpty() || afterReadings.isEmpty()) return ActualSavings.empty();
 
-        EnergyReading before = baseline.get();
-        EnergyReading after = postVisit.get();
+        BigDecimal avgDailyGasBefore  = savingsCalculator.averageDailyRate(beforeReadings, EnergyReading::getGasUsageM3);
+        BigDecimal avgDailyElecBefore = savingsCalculator.averageDailyRate(beforeReadings, EnergyReading::getElectricityUsageKwh);
+        BigDecimal avgDailyCostBefore = savingsCalculator.averageDailyRate(beforeReadings, EnergyReading::getTotalCostEuros);
 
-        return new ActualSavings(
-                subtract(before.getGasUsageM3(), after.getGasUsageM3()),
-                subtract(before.getElectricityUsageKwh(), after.getElectricityUsageKwh()),
-                subtract(before.getTotalCostEuros(), after.getTotalCostEuros())
-        );
+        BigDecimal annualGas  = savingsCalculator.annualize(subtract(avgDailyGasBefore,  savingsCalculator.averageDailyRate(afterReadings, EnergyReading::getGasUsageM3)));
+        BigDecimal annualElec = savingsCalculator.annualize(subtract(avgDailyElecBefore, savingsCalculator.averageDailyRate(afterReadings, EnergyReading::getElectricityUsageKwh)));
+        BigDecimal annualCost = savingsCalculator.annualize(subtract(avgDailyCostBefore, savingsCalculator.averageDailyRate(afterReadings, EnergyReading::getTotalCostEuros)));
+
+        return new ActualSavings(annualGas, annualElec, annualCost);
     }
 
     private BigDecimal sumField(List<PropertySavingsEntry> entries,
