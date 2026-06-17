@@ -75,45 +75,129 @@ public class DataSeeder implements ApplicationRunner {
         createUser("huurder3@energiefixers.nl", "Huurder@1234", Role.TENANT, "Mohammed", prop3);
         createUser("huurder4@energiefixers.nl", "Huurder@1234", Role.TENANT, "Sara",     prop4);
 
-        Material dakisolatie = createMaterial(
-                "Dakisolatie",
-                "Isolatiedeken voor platte en schuine daken",
-                "89.99", "120.00", "0.00",
+        Material radiatorventilator = createMaterial(
+                "Radiatorventilatoren",
+                "Ventilator voor radiator om warmteafgifte te verbeteren",
+                "71.37", "25.00", "5.00",
+                Material.Category.VENTILATION);
+
+        createMaterial(
+                "Extra ventilator kabeltje",
+                "Aansluitkabeltje voor radiatorventilator",
+                "1.71", "0.00", "0.00",
+                Material.Category.VENTILATION);
+
+        createMaterial(
+                "Radiatorfolie rol 40 cm",
+                "Reflecterende folie achter radiator, 40 cm breed",
+                "26.72", "12.00", "0.00",
                 Material.Category.INSULATION);
 
-        Material spouwmuur = createMaterial(
-                "Spouwmuurisolatie",
-                "Ingeblazen isolatiemateriaal voor spouwmuren",
-                "75.00", "95.00", "0.00",
+        createMaterial(
+                "Radiatorfolie rol 50 cm",
+                "Reflecterende folie achter radiator, 50 cm breed",
+                "30.35", "15.00", "0.00",
                 Material.Category.INSULATION);
 
-        Material led = createMaterial(
-                "LED-verlichting set",
-                "Set van 6 LED-lampen (E27, 8W)",
-                "24.95", "0.00", "180.00",
-                Material.Category.LIGHTING);
+        createMaterial(
+                "Magneten",
+                "Magneten voor bevestiging van radiatorfolie",
+                "0.30", "0.00", "0.00",
+                Material.Category.OTHER);
+
+        createMaterial(
+                "Rol magneetband",
+                "Zelfklevende magneetband voor bevestiging van radiatorfolie",
+                "18.13", "0.00", "0.00",
+                Material.Category.OTHER);
 
         Material douchekop = createMaterial(
-                "Waterbesparende douchekop",
-                "Spaardouchekop met max. 7 liter/minuut",
-                "19.99", "30.00", "0.00",
+                "Besparende douchekop",
+                "Waterbesparende douchekop met verminderd debiet",
+                "22.69", "35.00", "0.00",
                 Material.Category.WATER);
 
         createMaterial(
-                "WTW-ventilatie-unit",
-                "Warmteterugwinningsunit voor gebalanceerde ventilatie",
-                "149.00", "60.00", "40.00",
-                Material.Category.VENTILATION);
+                "Douchetimer",
+                "Timer om douchtijd te beperken en warm waterverbruik te verminderen",
+                "1.83", "15.00", "0.00",
+                Material.Category.WATER);
+
+        createMaterial(
+                "Stekkerdoos groot",
+                "Grote stekkerdoos met schakelaar om standby-verbruik te reduceren",
+                "25.75", "0.00", "35.00",
+                Material.Category.OTHER);
+
+        createMaterial(
+                "Stekkerdoos klein",
+                "Kleine stekkerdoos met schakelaar om standby-verbruik te reduceren",
+                "3.00", "0.00", "20.00",
+                Material.Category.OTHER);
+
+        createMaterial(
+                "Deur tochtband",
+                "Tochtband voor onderzijde van deuren",
+                "1.60", "5.00", "0.00",
+                Material.Category.INSULATION);
+
+        createMaterial(
+                "Deurdranger veer",
+                "Veer om deuren automatisch te sluiten en warmteverlies te beperken",
+                "3.40", "8.00", "0.00",
+                Material.Category.INSULATION);
+
+        Material tochtstrip_p = createMaterial(
+                "Tochtstrip P",
+                "P-profiel tochtstrip voor raam- en deurkozijnen",
+                "3.30", "10.00", "0.00",
+                Material.Category.INSULATION);
+
+        createMaterial(
+                "Tochtstrip M",
+                "M-profiel tochtstrip voor raam- en deurkozijnen",
+                "2.90", "8.00", "0.00",
+                Material.Category.INSULATION);
+
+        createMaterial(
+                "4,9W (40W) LED E27",
+                "LED-lamp E27 4,9W ter vervanging van 40W gloeilamp",
+                "1.44", "0.00", "52.00",
+                Material.Category.LIGHTING);
+
+        Material led_e27_7w = createMaterial(
+                "7W (60W) LED E27",
+                "LED-lamp E27 7W ter vervanging van 60W gloeilamp",
+                "2.13", "0.00", "79.00",
+                Material.Category.LIGHTING);
+
+        createMaterial(
+                "2,5W (25W) LED E14",
+                "LED-lamp E14 2,5W ter vervanging van 25W gloeilamp",
+                "2.00", "0.00", "34.00",
+                Material.Category.LIGHTING);
+
+        createMaterial(
+                "Hygrometer",
+                "Vochtmeter om luchtvochtigheid te monitoren en schimmel te voorkomen",
+                "4.40", "0.00", "0.00",
+                Material.Category.OTHER);
+
+        createMaterial(
+                "Brievenbusborstel",
+                "Borsteldichting voor brievenbus om tocht te voorkomen",
+                "6.26", "3.00", "0.00",
+                Material.Category.INSULATION);
 
         // Visit 1 — prop1 — 2024-03-15
         FixVisit visit1 = new FixVisit();
         visit1.setProperty(prop1);
         visit1.setVisitDate(LocalDate.of(2024, 3, 15));
-        visit1.setNotes("Dakisolatie en LED-verlichting geplaatst. Bewoner aanwezig.");
-        visit1.setTotalMaterialCost(new BigDecimal("114.94"));
+        visit1.setNotes("Radiatorventilator en LED-verlichting geplaatst. Bewoner aanwezig.");
+        visit1.setTotalMaterialCost(new BigDecimal("75.63"));
         visit1.setInstalledMaterials(List.of(
-                installedMaterial(visit1, dakisolatie, 1),
-                installedMaterial(visit1, led, 1)
+                installedMaterial(visit1, radiatorventilator, 1),
+                installedMaterial(visit1, led_e27_7w, 2)
         ));
         fixVisitRepository.save(visit1);
 
@@ -121,11 +205,11 @@ public class DataSeeder implements ApplicationRunner {
         FixVisit visit2 = new FixVisit();
         visit2.setProperty(prop2);
         visit2.setVisitDate(LocalDate.of(2024, 6, 1));
-        visit2.setNotes("Spouwmuurisolatie en waterbesparende douchekop geïnstalleerd.");
-        visit2.setTotalMaterialCost(new BigDecimal("94.99"));
+        visit2.setNotes("Besparende douchekop en tochtstrips geïnstalleerd.");
+        visit2.setTotalMaterialCost(new BigDecimal("29.29"));
         visit2.setInstalledMaterials(List.of(
-                installedMaterial(visit2, spouwmuur, 1),
-                installedMaterial(visit2, douchekop, 1)
+                installedMaterial(visit2, douchekop, 1),
+                installedMaterial(visit2, tochtstrip_p, 2)
         ));
         fixVisitRepository.save(visit2);
 
