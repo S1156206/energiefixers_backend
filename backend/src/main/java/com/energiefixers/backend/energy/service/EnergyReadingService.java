@@ -212,7 +212,26 @@ public class EnergyReadingService {
             if (d.isNaN() || d.isInfinite()) return BigDecimal.ZERO;
             return BigDecimal.valueOf(d);
         }
-        if (value instanceof Number n) return new BigDecimal(n.toString());
-        return new BigDecimal(value.toString());
+        if (value instanceof Float f) {
+            if (f.isNaN() || f.isInfinite()) return BigDecimal.ZERO;
+            return BigDecimal.valueOf(f.doubleValue());
+        }
+        if (value instanceof Number n) {
+            try {
+                return new BigDecimal(n.toString());
+            } catch (NumberFormatException e) {
+                return BigDecimal.valueOf(n.doubleValue());
+            }
+        }
+        try {
+            return new BigDecimal(value.toString().trim());
+        } catch (NumberFormatException e) {
+            try {
+                double d = Double.parseDouble(value.toString().trim());
+                return Double.isFinite(d) ? BigDecimal.valueOf(d) : BigDecimal.ZERO;
+            } catch (NumberFormatException e2) {
+                return BigDecimal.ZERO;
+            }
+        }
     }
 }
