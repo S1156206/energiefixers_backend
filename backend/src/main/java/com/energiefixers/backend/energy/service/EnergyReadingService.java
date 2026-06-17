@@ -208,6 +208,11 @@ public class EnergyReadingService {
     private BigDecimal toBigDecimal(Object value) {
         if (value == null) return BigDecimal.ZERO;
         if (value instanceof BigDecimal bd) return bd;
+        if (value instanceof Double d) {
+            if (d.isNaN() || d.isInfinite()) return BigDecimal.ZERO;
+            return BigDecimal.valueOf(d);
+        }
+        if (value instanceof Number n) return new BigDecimal(n.toString());
         return new BigDecimal(value.toString());
     }
 }
