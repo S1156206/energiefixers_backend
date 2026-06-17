@@ -138,7 +138,8 @@ public class EnergyReadingService {
                 .orElseThrow();
 
         // Material-based estimates — always available
-        Object[] est = fixVisitRepository.sumEstimatedSavingsByPropertyId(propertyId);
+        List<Object[]> estRows = fixVisitRepository.sumEstimatedSavingsByPropertyId(propertyId);
+        Object[] est = estRows.isEmpty() ? new Object[]{null, null} : estRows.get(0);
         BigDecimal estimatedAnnualGas  = toBigDecimal(est[0]);
         BigDecimal estimatedAnnualElec = toBigDecimal(est[1]);
         long daysSinceLastVisit = ChronoUnit.DAYS.between(lastVisit, LocalDate.now());

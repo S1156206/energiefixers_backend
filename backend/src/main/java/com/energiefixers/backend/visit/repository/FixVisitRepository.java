@@ -47,7 +47,7 @@ public interface FixVisitRepository extends JpaRepository<FixVisit, Long> {
            "FROM FixVisit fv LEFT JOIN fv.installedMaterials im LEFT JOIN im.material m " +
            "WHERE (:from IS NULL OR fv.visitDate >= :from) " +
            "AND (:to IS NULL OR fv.visitDate <= :to)")
-    Object[] getSavingsTotals(@Param("from") LocalDate from, @Param("to") LocalDate to);
+    List<Object[]> getSavingsTotals(@Param("from") LocalDate from, @Param("to") LocalDate to);
 
     @Query("SELECT fv.property.region.id, fv.property.region.name, " +
            "COUNT(DISTINCT fv.property.id), COUNT(fv.id), " +
@@ -104,5 +104,5 @@ public interface FixVisitRepository extends JpaRepository<FixVisit, Long> {
            "COALESCE(SUM(im.quantity * m.estimatedElectricitySavingKwh), 0) " +
            "FROM FixVisit fv LEFT JOIN fv.installedMaterials im LEFT JOIN im.material m " +
            "WHERE fv.property.id = :propertyId")
-    Object[] sumEstimatedSavingsByPropertyId(@Param("propertyId") Long propertyId);
+    List<Object[]> sumEstimatedSavingsByPropertyId(@Param("propertyId") Long propertyId);
 }
