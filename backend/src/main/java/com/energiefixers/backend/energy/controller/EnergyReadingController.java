@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.energiefixers.backend.energy.dto.EnergyReadingRequest;
 import com.energiefixers.backend.energy.dto.EnergyReadingResponse;
+import com.energiefixers.backend.energy.dto.TenantSavingsResponse;
 import com.energiefixers.backend.energy.models.EnergyReading;
 import com.energiefixers.backend.energy.service.EnergyReadingService;
 import com.energiefixers.backend.shared.ApiResponse;
@@ -59,6 +60,13 @@ public class EnergyReadingController {
         Long userId = extractUserId(authentication);
         EnergyReading updated = energyReadingService.updateForTenant(userId, id, request);
         return ResponseEntity.ok(ApiResponse.success(EnergyReadingResponse.from(updated)));
+    }
+
+    @GetMapping("/savings")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<TenantSavingsResponse> getSavings(Authentication authentication) {
+        Long userId = extractUserId(authentication);
+        return ResponseEntity.ok(energyReadingService.getSavingsForTenant(userId));
     }
 
     @DeleteMapping("/{id}")
