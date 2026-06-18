@@ -110,12 +110,6 @@ public class DashboardService {
         );
     }
 
-    /**
-     * Normalises energy readings to a monthly cost average before and after the fix visit,
-     * then computes the actual savings accrued in the post-visit period.
-     *
-     * Returns null when there are insufficient readings to make the comparison.
-     */
     private PropertySavings computeNormalizedSavings(List<EnergyReading> readings, List<FixVisit> visits) {
         if (visits.isEmpty() || readings.isEmpty()) return null;
 
@@ -160,7 +154,6 @@ public class DashboardService {
 
         BigDecimal monthlyActualSavings = beforeMonthly.subtract(afterMonthly);
 
-        // Actual euros saved in the post-visit period vs what the tenant would have paid
         BigDecimal actualSavingsInAfterPeriod = monthlyActualSavings.multiply(BigDecimal.valueOf(afterMonths));
 
         return new PropertySavings(monthlyActualSavings, actualSavingsInAfterPeriod);
@@ -275,8 +268,8 @@ public class DashboardService {
         return total;
     }
 
-    public List<MaterialInstallationSummary> getMaterialsSummary() {
-        return fixVisitRepository.sumInstalledQuantityByMaterial().stream()
+    public List<MaterialInstallationSummary> getMaterialsSummary(Long fixRoundId) {
+        return fixVisitRepository.sumInstalledQuantityByMaterialFiltered(null, fixRoundId).stream()
                 .map(row -> new MaterialInstallationSummary(
                         (String) row[0],
                         row[1].toString(),

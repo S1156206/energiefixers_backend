@@ -32,7 +32,8 @@ public class DashboardController {
     }
 
     @GetMapping("/materials")
-    public List<MaterialInstallationSummary> getMaterialsSummary() {
-        return dashboardService.getMaterialsSummary();
+    public List<MaterialInstallationSummary> getMaterialsSummary(
+            @RequestParam(required = false) Long fixRoundId) {
+        return dashboardService.getMaterialsSummary(fixRoundId);
     }
 }
