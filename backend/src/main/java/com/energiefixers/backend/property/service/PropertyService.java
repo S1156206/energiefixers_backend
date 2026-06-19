@@ -56,6 +56,7 @@ public class PropertyService {
     public Property create(PropertyRequest request) {
         Property property = new Property();
         property.setStreet(request.getStreet());
+        property.setCity(request.getCity());
         property.setHouseNumber(request.getHouseNumber());
         property.setHouseNumberSuffix(request.getHouseNumberSuffix());
         property.setPostcode(request.getPostcode());
@@ -79,6 +80,7 @@ public class PropertyService {
         Property property = getById(id);
 
         property.setStreet(request.getStreet());
+        property.setCity(request.getCity());
         property.setHouseNumber(request.getHouseNumber());
         property.setHouseNumberSuffix(request.getHouseNumberSuffix());
         property.setPostcode(request.getPostcode());

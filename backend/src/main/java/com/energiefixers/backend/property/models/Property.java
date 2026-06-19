@@ -32,6 +32,9 @@ public class Property {
     private String street;
 
     @Column(nullable = false)
+    private String city;
+
+    @Column(nullable = false)
     private String houseNumber;
 
     private String houseNumberSuffix;

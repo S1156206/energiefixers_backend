@@ -21,6 +21,7 @@ import com.energiefixers.backend.visit.dto.FixVisitResponse;
 public class PropertyResponse {
     private Long id;
     private String street;
+    private String city;
     private String houseNumber;
     private String houseNumberSuffix;
     private String postcode;
@@ -43,6 +44,7 @@ public class PropertyResponse {
         PropertyResponse response = new PropertyResponse();
         response.setId(property.getId());
         response.setStreet(property.getStreet());
+        response.setCity(property.getCity());
         response.setHouseNumber(property.getHouseNumber());
         response.setHouseNumberSuffix(property.getHouseNumberSuffix());
         response.setPostcode(property.getPostcode());

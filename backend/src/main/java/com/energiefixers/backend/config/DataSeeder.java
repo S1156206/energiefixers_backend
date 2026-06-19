@@ -63,10 +63,10 @@ public class DataSeeder implements ApplicationRunner {
         FixRound ronde4 = createFixRound("Ronde 4", LocalDate.of(2024, 5,  1),  LocalDate.of(2024, 6, 30), false);
         FixRound ronde5 = createFixRound("Ronde 5", LocalDate.of(2024, 9,  1),  LocalDate.of(2024, 10, 31), true);
 
-        Property prop1 = createProperty("Rijnsburgerweg", "14",  null, "2316HA", Property.EnergyLabel.E, Property.EnergyLabel.C, noord,   ronde3);
-        Property prop2 = createProperty("Tjalklaan",       "7",  "B",  "2316KP", Property.EnergyLabel.F, Property.EnergyLabel.D, noord,   ronde4);
-        Property prop3 = createProperty("Kettingstraat",   "22", null, "2321BK", Property.EnergyLabel.D, null,                    zuid,    ronde5);
-        Property prop4 = createProperty("Lange Mare",      "45", null, "2312GT", Property.EnergyLabel.G, null,                    centrum, ronde5);
+        Property prop1 = createProperty("Rijnsburgerweg", "Leiden", "14",  null, "2316HA", Property.EnergyLabel.E, Property.EnergyLabel.C, noord,   ronde3);
+        Property prop2 = createProperty("Tjalklaan",       "Leiden", "7",  "B",  "2316KP", Property.EnergyLabel.F, Property.EnergyLabel.D, noord,   ronde4);
+        Property prop3 = createProperty("Kettingstraat",   "Leiden", "22", null, "2321BK", Property.EnergyLabel.D, null,                    zuid,    ronde5);
+        Property prop4 = createProperty("Lange Mare",      "Leiden", "45", null, "2312GT", Property.EnergyLabel.G, null,                    centrum, ronde5);
 
         createUser("admin@energiefixers.nl",    "Admin@1234",   Role.ADMIN,  "Admin",    null);
         createUser("staff@energiefixers.nl",    "Staff@1234",   Role.STAFF,  "Pieter",   null);
@@ -244,11 +244,12 @@ public class DataSeeder implements ApplicationRunner {
         return fixRoundRepository.save(r);
     }
 
-    private Property createProperty(String street, String houseNumber, String suffix,
+    private Property createProperty(String street, String city, String houseNumber, String suffix,
                                     String postcode, Property.EnergyLabel before,
                                     Property.EnergyLabel after, Region region, FixRound fixRound) {
         Property p = new Property();
         p.setStreet(street);
+        p.setCity(city);
         p.setHouseNumber(houseNumber);
         p.setHouseNumberSuffix(suffix);
         p.setPostcode(postcode);
