@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 public class MyPropertyResponse {
     private Long id;
     private String street;
+    private String city;
     private String houseNumber;
     private String houseNumberSuffix;
     private String postcode;
@@ -26,6 +27,7 @@ public class MyPropertyResponse {
         MyPropertyResponse response = new MyPropertyResponse();
         response.setId(property.getId());
         response.setStreet(property.getStreet());
+        response.setCity(property.getCity());
         response.setHouseNumber(property.getHouseNumber());
         response.setHouseNumberSuffix(property.getHouseNumberSuffix());
         response.setPostcode(property.getPostcode());

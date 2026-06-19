@@ -19,6 +19,7 @@ public class PropertySummaryResponse {
 
     private Long id;
     private String street;
+    private String city;
     private String houseNumber;
     private String houseNumberSuffix;
     private String postcode;
@@ -33,6 +34,7 @@ public class PropertySummaryResponse {
         PropertySummaryResponse response = new PropertySummaryResponse();
         response.setId(property.getId());
         response.setStreet(property.getStreet());
+        response.setCity(property.getCity());
         response.setHouseNumber(property.getHouseNumber());
         response.setHouseNumberSuffix(property.getHouseNumberSuffix());
         response.setPostcode(property.getPostcode());

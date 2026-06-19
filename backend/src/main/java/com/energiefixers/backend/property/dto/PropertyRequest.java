@@ -8,6 +8,7 @@ import lombok.Setter;
 @Getter @Setter
 public class PropertyRequest {
     private String street;
+    private String city;
     private String houseNumber;
     private String houseNumberSuffix;
     private String postcode;
