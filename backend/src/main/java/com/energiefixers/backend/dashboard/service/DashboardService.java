@@ -6,6 +6,7 @@ import com.energiefixers.backend.energy.repository.EnergyReadingRepository;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.models.Region;
 import com.energiefixers.backend.property.models.FixRound;
+import com.energiefixers.backend.property.repository.FixRoundRepository;
 import com.energiefixers.backend.property.repository.PropertyRepository;
 import com.energiefixers.backend.property.repository.RegionRepository;
 import com.energiefixers.backend.visit.models.FixVisit;
@@ -36,6 +37,7 @@ public class DashboardService {
     private final PropertyRepository propertyRepository;
     private final FixVisitRepository fixVisitRepository;
     private final EnergyReadingRepository energyReadingRepository;
+    private final FixRoundRepository fixRoundRepository;
 
     public DashboardSavingsResponse getSavings(Long regionId) {
         List<Region> regions = regionId != null
@@ -279,6 +281,7 @@ public class DashboardService {
 
     public PublicOverviewResponse getPublicOverview() {
         List<FixVisit> allVisits = fixVisitRepository.findAll();
+        List<FixRound> allRounds = fixRoundRepository.findAll();
 
         Map<FixRound, List<FixVisit>> visitsByRound = allVisits.stream()
                 .filter(v -> v.getProperty() != null && v.getProperty().getFixRound() != null)
@@ -289,7 +292,7 @@ public class DashboardService {
                 .distinct()
                 .count();
 
-        long totalFixRounds = visitsByRound.keySet().size();
+        long totalFixRounds = allRounds.size();
 
         BigDecimal overallGas = BigDecimal.ZERO;
         BigDecimal overallElec = BigDecimal.ZERO;
@@ -297,9 +300,8 @@ public class DashboardService {
 
         List<FixRoundChartEntry> chartData = new ArrayList<>();
 
-        for (Map.Entry<FixRound, List<FixVisit>> entry : visitsByRound.entrySet()) {
-            FixRound round = entry.getKey();
-            List<FixVisit> roundVisits = entry.getValue();
+        for (FixRound round : allRounds) {
+            List<FixVisit> roundVisits = visitsByRound.getOrDefault(round, List.of());
 
             long roundProperties = roundVisits.stream()
                     .map(v -> v.getProperty().getId())
@@ -342,7 +344,9 @@ public class DashboardService {
                     round.getName(),
                     roundCo2.setScale(0, RoundingMode.HALF_UP),
                     roundEuros.setScale(2, RoundingMode.HALF_UP),
-                    roundProperties
+                    roundProperties,
+                    roundGas.setScale(2, RoundingMode.HALF_UP),   // TOEGEVOEGD
+                    roundElec.setScale(2, RoundingMode.HALF_UP)   // TOEGEVOEGD
             ));
         }
 

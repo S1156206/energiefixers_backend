@@ -13,4 +13,6 @@ public class FixRoundChartEntry {
     private BigDecimal co2SavedKg;
     private BigDecimal savingsEuros;
     private long propertiesHelped;
+    private BigDecimal gasSavedM3;
+    private BigDecimal electricitySavedKwh;
 }
