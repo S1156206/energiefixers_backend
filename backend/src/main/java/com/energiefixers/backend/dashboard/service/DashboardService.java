@@ -29,8 +29,8 @@ public class DashboardService {
     private static final BigDecimal GAS_PRICE_PER_M3 = new BigDecimal("1.10");
     private static final BigDecimal ELECTRICITY_PRICE_PER_KWH = new BigDecimal("0.30");
 
-    private static final BigDecimal CO2_PER_M3_GAS = new BigDecimal("1.884");
-    private static final BigDecimal CO2_PER_KWH_ELEC = new BigDecimal("0.356");
+    private static final BigDecimal CO2_PER_M3_GAS = new BigDecimal("1.78");
+    private static final BigDecimal CO2_PER_KWH_ELEC = new BigDecimal("0.27");
 
     private final RegionRepository regionRepository;
     private final PropertyRepository propertyRepository;
