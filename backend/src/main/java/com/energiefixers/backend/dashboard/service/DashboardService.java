@@ -1,14 +1,11 @@
 package com.energiefixers.backend.dashboard.service;
 
-import com.energiefixers.backend.dashboard.dto.DashboardCombinedSavingsResponse;
-import com.energiefixers.backend.dashboard.dto.DashboardSavingsResponse;
-import com.energiefixers.backend.dashboard.dto.MaterialInstallationSummary;
-import com.energiefixers.backend.dashboard.dto.RegionCombinedEntry;
-import com.energiefixers.backend.dashboard.dto.RegionDashboardEntry;
+import com.energiefixers.backend.dashboard.dto.*;
 import com.energiefixers.backend.energy.models.EnergyReading;
 import com.energiefixers.backend.energy.repository.EnergyReadingRepository;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.models.Region;
+import com.energiefixers.backend.property.models.FixRound;
 import com.energiefixers.backend.property.repository.PropertyRepository;
 import com.energiefixers.backend.property.repository.RegionRepository;
 import com.energiefixers.backend.visit.models.FixVisit;
@@ -31,6 +28,9 @@ public class DashboardService {
     private static final double AVG_DAYS_PER_MONTH = 30.4375;
     private static final BigDecimal GAS_PRICE_PER_M3 = new BigDecimal("1.10");
     private static final BigDecimal ELECTRICITY_PRICE_PER_KWH = new BigDecimal("0.30");
+
+    private static final BigDecimal CO2_PER_M3_GAS = new BigDecimal("1.78");
+    private static final BigDecimal CO2_PER_KWH_ELEC = new BigDecimal("0.27");
 
     private final RegionRepository regionRepository;
     private final PropertyRepository propertyRepository;
@@ -153,7 +153,6 @@ public class DashboardService {
                 BigDecimal.valueOf(afterMonths), 6, RoundingMode.HALF_UP);
 
         BigDecimal monthlyActualSavings = beforeMonthly.subtract(afterMonthly);
-
         BigDecimal actualSavingsInAfterPeriod = monthlyActualSavings.multiply(BigDecimal.valueOf(afterMonths));
 
         return new PropertySavings(monthlyActualSavings, actualSavingsInAfterPeriod);
@@ -276,6 +275,90 @@ public class DashboardService {
                         ((Number) row[2]).longValue()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    public PublicOverviewResponse getPublicOverview() {
+        List<FixVisit> allVisits = fixVisitRepository.findAll();
+
+        Map<FixRound, List<FixVisit>> visitsByRound = allVisits.stream()
+                .filter(v -> v.getProperty() != null && v.getProperty().getFixRound() != null)
+                .collect(Collectors.groupingBy(v -> v.getProperty().getFixRound()));
+
+        long totalPropertiesHelped = allVisits.stream()
+                .map(v -> v.getProperty().getId())
+                .distinct()
+                .count();
+
+        long totalFixRounds = visitsByRound.keySet().size();
+
+        BigDecimal overallGas = BigDecimal.ZERO;
+        BigDecimal overallElec = BigDecimal.ZERO;
+        BigDecimal overallEuros = BigDecimal.ZERO;
+
+        List<FixRoundChartEntry> chartData = new ArrayList<>();
+
+        for (Map.Entry<FixRound, List<FixVisit>> entry : visitsByRound.entrySet()) {
+            FixRound round = entry.getKey();
+            List<FixVisit> roundVisits = entry.getValue();
+
+            long roundProperties = roundVisits.stream()
+                    .map(v -> v.getProperty().getId())
+                    .distinct()
+                    .count();
+
+            BigDecimal roundGas = BigDecimal.ZERO;
+            BigDecimal roundElec = BigDecimal.ZERO;
+            BigDecimal roundEuros = BigDecimal.ZERO;
+
+            for (FixVisit v : roundVisits) {
+                if (v.getInstalledMaterials() == null) continue;
+                for (var im : v.getInstalledMaterials()) {
+                    var mat = im.getMaterial();
+                    if (mat == null) continue;
+
+                    BigDecimal qty = BigDecimal.valueOf(im.getQuantity());
+
+                    if (mat.getEstimatedGasSavingM3() != null) {
+                        BigDecimal gas = qty.multiply(mat.getEstimatedGasSavingM3());
+                        roundGas = roundGas.add(gas);
+                        roundEuros = roundEuros.add(gas.multiply(GAS_PRICE_PER_M3));
+                    }
+                    if (mat.getEstimatedElectricitySavingKwh() != null) {
+                        BigDecimal elec = qty.multiply(mat.getEstimatedElectricitySavingKwh());
+                        roundElec = roundElec.add(elec);
+                        roundEuros = roundEuros.add(elec.multiply(ELECTRICITY_PRICE_PER_KWH));
+                    }
+                }
+            }
+
+            BigDecimal roundCo2 = roundGas.multiply(CO2_PER_M3_GAS).add(roundElec.multiply(CO2_PER_KWH_ELEC));
+
+            overallGas = overallGas.add(roundGas);
+            overallElec = overallElec.add(roundElec);
+            overallEuros = overallEuros.add(roundEuros);
+
+            chartData.add(new FixRoundChartEntry(
+                    round.getId(),
+                    round.getName(),
+                    roundCo2.setScale(0, RoundingMode.HALF_UP),
+                    roundEuros.setScale(2, RoundingMode.HALF_UP),
+                    roundProperties
+            ));
+        }
+
+        BigDecimal overallCo2 = overallGas.multiply(CO2_PER_M3_GAS).add(overallElec.multiply(CO2_PER_KWH_ELEC));
+
+        chartData.sort(Comparator.comparing(FixRoundChartEntry::getFixRoundName));
+
+        return new PublicOverviewResponse(
+                totalFixRounds,
+                totalPropertiesHelped,
+                overallEuros.setScale(2, RoundingMode.HALF_UP),
+                overallGas.setScale(2, RoundingMode.HALF_UP),
+                overallElec.setScale(2, RoundingMode.HALF_UP),
+                overallCo2.setScale(0, RoundingMode.HALF_UP),
+                chartData
+        );
     }
 
     private record PropertySavings(BigDecimal monthlyActualSavingsEuros, BigDecimal actualSavingsEuros) {}

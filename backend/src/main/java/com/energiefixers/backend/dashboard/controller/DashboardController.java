@@ -3,8 +3,10 @@ package com.energiefixers.backend.dashboard.controller;
 import com.energiefixers.backend.dashboard.dto.DashboardCombinedSavingsResponse;
 import com.energiefixers.backend.dashboard.dto.DashboardSavingsResponse;
 import com.energiefixers.backend.dashboard.dto.MaterialInstallationSummary;
+import com.energiefixers.backend.dashboard.dto.PublicOverviewResponse;
 import com.energiefixers.backend.dashboard.service.DashboardService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,5 +37,11 @@ public class DashboardController {
     public List<MaterialInstallationSummary> getMaterialsSummary(
             @RequestParam(required = false) Long fixRoundId) {
         return dashboardService.getMaterialsSummary(fixRoundId);
+    }
+
+    @GetMapping("/public-overview")
+    @PreAuthorize("hasAnyRole('TENANT', 'STAFF', 'ADMIN')")
+    public PublicOverviewResponse getPublicOverview() {
+        return dashboardService.getPublicOverview();
     }
 }
