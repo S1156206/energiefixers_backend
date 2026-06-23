@@ -40,6 +40,29 @@ public class EmailOptOutService {
         }
     }
 
+    @Transactional
+    public void optOutByEmail(String email) {
+        EmailOptOut record = emailOptOutRepository.findByEmail(normalize(email))
+            .orElseGet(() -> {
+                EmailOptOut newRecord = new EmailOptOut();
+                newRecord.setEmail(normalize(email));
+                return emailOptOutRepository.save(newRecord);
+            });
+        if (!record.isOptedOut()) {
+            record.setOptedOutAt(LocalDateTime.now());
+            emailOptOutRepository.save(record);
+        }
+    }
+
+    @Transactional
+    public void optInByEmail(String email) {
+        emailOptOutRepository.findByEmail(normalize(email))
+            .ifPresent(record -> {
+                record.setOptedOutAt(null);
+                emailOptOutRepository.save(record);
+            });
+    }
+
     private String normalize(String email) {
         return email.trim().toLowerCase();
     }
