@@ -58,8 +58,9 @@ public class EmailOptOutService {
     public void optInByEmail(String email) {
         emailOptOutRepository.findByEmail(normalize(email))
             .ifPresent(record -> {
-                record.setOptedOutAt(null);
-                emailOptOutRepository.save(record);
+                if (record.isOptedOut()) {
+                    record.setOptedOutAt(null);
+                }
             });
     }
 

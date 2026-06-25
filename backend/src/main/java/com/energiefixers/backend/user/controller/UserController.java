@@ -37,8 +37,12 @@ public class UserController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> updateEmailPreference(
             @RequestBody Map<String, Boolean> body,
             Authentication authentication) {
+        Boolean optOutValue = body.get("optOut");
+        if (optOutValue == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("optOut field is required"));
+        }
         User user = getUser(authentication);
-        boolean optOut = body.getOrDefault("optOut", false);
+        boolean optOut = optOutValue;
 
         if (optOut) {
             emailOptOutService.optOutByEmail(user.getEmail());
