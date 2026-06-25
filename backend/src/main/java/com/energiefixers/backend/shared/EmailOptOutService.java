@@ -46,11 +46,11 @@ public class EmailOptOutService {
             .orElseGet(() -> {
                 EmailOptOut newRecord = new EmailOptOut();
                 newRecord.setEmail(normalize(email));
+                newRecord.setOptedOutAt(LocalDateTime.now());
                 return emailOptOutRepository.save(newRecord);
             });
         if (!record.isOptedOut()) {
             record.setOptedOutAt(LocalDateTime.now());
-            emailOptOutRepository.save(record);
         }
     }
 
