@@ -45,6 +45,7 @@ public class MaterialController {
         material.setEstimatedGasSavingM3(request.getEstimatedGasSavingM3());
         material.setEstimatedElectricitySavingKwh(request.getEstimatedElectricitySavingKwh());
         material.setCategory(request.getCategory());
+        material.setUnit(request.getUnit());
         Material saved = materialRepository.save(material);
         return ResponseEntity.status(201).body(ApiResponse.success(MaterialResponse.from(saved)));
     }
@@ -60,6 +61,7 @@ public class MaterialController {
         material.setEstimatedGasSavingM3(request.getEstimatedGasSavingM3());
         material.setEstimatedElectricitySavingKwh(request.getEstimatedElectricitySavingKwh());
         material.setCategory(request.getCategory());
+        material.setUnit(request.getUnit());
         Material saved = materialRepository.save(material);
         return ResponseEntity.ok(ApiResponse.success(MaterialResponse.from(saved)));
     }

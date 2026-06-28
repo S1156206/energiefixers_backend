@@ -79,115 +79,115 @@ public class DataSeeder implements ApplicationRunner {
                 "Radiatorventilatoren",
                 "Ventilator voor radiator om warmteafgifte te verbeteren",
                 "71.37", "25.00", "5.00",
-                Material.Category.VENTILATION);
+                Material.Category.VENTILATION, Material.Unit.PIECE);
 
         createMaterial(
                 "Extra ventilator kabeltje",
                 "Aansluitkabeltje voor radiatorventilator",
                 "1.71", "0.00", "0.00",
-                Material.Category.VENTILATION);
+                Material.Category.VENTILATION, Material.Unit.PIECE);
 
         createMaterial(
                 "Radiatorfolie rol 40 cm",
                 "Reflecterende folie achter radiator, 40 cm breed",
                 "26.72", "12.00", "0.00",
-                Material.Category.INSULATION);
+                Material.Category.INSULATION, Material.Unit.SQUARE_METER);
 
         createMaterial(
                 "Radiatorfolie rol 50 cm",
                 "Reflecterende folie achter radiator, 50 cm breed",
                 "30.35", "15.00", "0.00",
-                Material.Category.INSULATION);
+                Material.Category.INSULATION, Material.Unit.SQUARE_METER);
 
         createMaterial(
                 "Magneten",
                 "Magneten voor bevestiging van radiatorfolie",
                 "0.30", "0.00", "0.00",
-                Material.Category.OTHER);
+                Material.Category.OTHER, Material.Unit.PIECE);
 
         createMaterial(
                 "Rol magneetband",
                 "Zelfklevende magneetband voor bevestiging van radiatorfolie",
                 "18.13", "0.00", "0.00",
-                Material.Category.OTHER);
+                Material.Category.OTHER, Material.Unit.ROLL);
 
         Material douchekop = createMaterial(
                 "Besparende douchekop",
                 "Waterbesparende douchekop met verminderd debiet",
                 "22.69", "35.00", "0.00",
-                Material.Category.WATER);
+                Material.Category.WATER, Material.Unit.PIECE);
 
         createMaterial(
                 "Douchetimer",
                 "Timer om douchtijd te beperken en warm waterverbruik te verminderen",
                 "1.83", "15.00", "0.00",
-                Material.Category.WATER);
+                Material.Category.WATER, Material.Unit.PIECE);
 
         createMaterial(
                 "Stekkerdoos groot",
                 "Grote stekkerdoos met schakelaar om standby-verbruik te reduceren",
                 "25.75", "0.00", "35.00",
-                Material.Category.OTHER);
+                Material.Category.OTHER, Material.Unit.PIECE);
 
         createMaterial(
                 "Stekkerdoos klein",
                 "Kleine stekkerdoos met schakelaar om standby-verbruik te reduceren",
                 "3.00", "0.00", "20.00",
-                Material.Category.OTHER);
+                Material.Category.OTHER, Material.Unit.PIECE);
 
         createMaterial(
                 "Deur tochtband",
                 "Tochtband voor onderzijde van deuren",
                 "1.60", "5.00", "0.00",
-                Material.Category.INSULATION);
+                Material.Category.INSULATION, Material.Unit.METER);
 
         createMaterial(
                 "Deurdranger veer",
                 "Veer om deuren automatisch te sluiten en warmteverlies te beperken",
                 "3.40", "8.00", "0.00",
-                Material.Category.INSULATION);
+                Material.Category.INSULATION, Material.Unit.PIECE);
 
         Material tochtstrip_p = createMaterial(
                 "Tochtstrip P",
                 "P-profiel tochtstrip voor raam- en deurkozijnen",
                 "3.30", "10.00", "0.00",
-                Material.Category.INSULATION);
+                Material.Category.INSULATION, Material.Unit.METER);
 
         createMaterial(
                 "Tochtstrip M",
                 "M-profiel tochtstrip voor raam- en deurkozijnen",
                 "2.90", "8.00", "0.00",
-                Material.Category.INSULATION);
+                Material.Category.INSULATION, Material.Unit.METER);
 
         createMaterial(
                 "4,9W (40W) LED E27",
                 "LED-lamp E27 4,9W ter vervanging van 40W gloeilamp",
                 "1.44", "0.00", "52.00",
-                Material.Category.LIGHTING);
+                Material.Category.LIGHTING, Material.Unit.PIECE);
 
         Material led_e27_7w = createMaterial(
                 "7W (60W) LED E27",
                 "LED-lamp E27 7W ter vervanging van 60W gloeilamp",
                 "2.13", "0.00", "79.00",
-                Material.Category.LIGHTING);
+                Material.Category.LIGHTING, Material.Unit.PIECE);
 
         createMaterial(
                 "2,5W (25W) LED E14",
                 "LED-lamp E14 2,5W ter vervanging van 25W gloeilamp",
                 "2.00", "0.00", "34.00",
-                Material.Category.LIGHTING);
+                Material.Category.LIGHTING, Material.Unit.PIECE);
 
         createMaterial(
                 "Hygrometer",
                 "Vochtmeter om luchtvochtigheid te monitoren en schimmel te voorkomen",
                 "4.40", "0.00", "0.00",
-                Material.Category.OTHER);
+                Material.Category.OTHER, Material.Unit.PIECE);
 
         createMaterial(
                 "Brievenbusborstel",
                 "Borsteldichting voor brievenbus om tocht te voorkomen",
                 "6.26", "3.00", "0.00",
-                Material.Category.INSULATION);
+                Material.Category.INSULATION, Material.Unit.METER);
 
         // Visit 1 — prop1 — 2024-03-15
         FixVisit visit1 = new FixVisit();
@@ -272,7 +272,7 @@ public class DataSeeder implements ApplicationRunner {
 
     private Material createMaterial(String name, String description,
                                     String price, String gasSaving, String electricitySaving,
-                                    Material.Category category) {
+                                    Material.Category category, Material.Unit unit) {
         Material m = new Material();
         m.setName(name);
         m.setDescription(description);
@@ -280,6 +280,7 @@ public class DataSeeder implements ApplicationRunner {
         m.setEstimatedGasSavingM3(new BigDecimal(gasSaving));
         m.setEstimatedElectricitySavingKwh(new BigDecimal(electricitySaving));
         m.setCategory(category);
+        m.setUnit(unit);
         return materialRepository.save(m);
     }
 

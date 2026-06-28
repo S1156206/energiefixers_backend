@@ -15,4 +15,5 @@ public class MaterialRequest {
     private BigDecimal estimatedGasSavingM3;
     private BigDecimal estimatedElectricitySavingKwh;
     private Material.Category category;
+    private Material.Unit unit;
 }
