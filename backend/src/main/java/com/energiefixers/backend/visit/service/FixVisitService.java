@@ -64,6 +64,42 @@ public class FixVisitService {
     }
 
     @Transactional
+    public FixVisit updateFixVisit(Long propertyId, Long visitId, FixVisitRequest request) {
+        FixVisit visit = fixVisitRepository.findById(visitId)
+                .orElseThrow(() -> new NotFoundException("Fix visit not found: " + visitId));
+        if (!visit.getProperty().getId().equals(propertyId)) {
+            throw new NotFoundException("Fix visit not found for this property");
+        }
+
+        visit.setVisitDate(request.getVisitDate());
+        visit.setNotes(request.getNotes());
+        visit.setTotalMaterialCost(request.getTotalMaterialCost());
+
+        visit.getInstalledMaterials().clear();
+        if (request.getInstalledMaterials() != null) {
+            for (InstalledMaterialRequest item : request.getInstalledMaterials()) {
+                if (item.getMaterialId() == null) {
+                    throw new IllegalArgumentException("Installed material must include materialId.");
+                }
+                if (item.getQuantity() <= 0) {
+                    throw new IllegalArgumentException("Installed material quantity must be greater than zero.");
+                }
+
+                Material material = materialRepository.findById(item.getMaterialId())
+                        .orElseThrow(() -> new NotFoundException("Material not found: " + item.getMaterialId()));
+
+                InstalledMaterial installed = new InstalledMaterial();
+                installed.setFixVisit(visit);
+                installed.setMaterial(material);
+                installed.setQuantity(item.getQuantity());
+                visit.getInstalledMaterials().add(installed);
+            }
+        }
+
+        return fixVisitRepository.save(visit);
+    }
+
+    @Transactional
     public void deleteFixVisit(Long propertyId, Long visitId) {
         FixVisit visit = fixVisitRepository.findById(visitId)
                 .orElseThrow(() -> new NotFoundException("Fix visit not found: " + visitId));
