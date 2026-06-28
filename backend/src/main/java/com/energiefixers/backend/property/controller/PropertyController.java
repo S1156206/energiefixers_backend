@@ -118,6 +118,17 @@ public class PropertyController {
         return ResponseEntity.ok(ApiResponse.success(enriched(PropertyResponse.from(updated), updated.getTenantEmail())));
     }
 
+    /** Staff/admin: update a fix visit and its installed materials */
+    @PutMapping("/{id}/fix-visits/{visitId}")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public ResponseEntity<ApiResponse<FixVisitResponse>> updateFixVisit(
+            @PathVariable Long id,
+            @PathVariable Long visitId,
+            @RequestBody FixVisitRequest request) {
+        FixVisit visit = fixVisitService.updateFixVisit(id, visitId, request);
+        return ResponseEntity.ok(ApiResponse.success(FixVisitResponse.from(visit)));
+    }
+
     /** Staff/admin: delete a fix visit and all its installed materials */
     @DeleteMapping("/{id}/fix-visits/{visitId}")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
