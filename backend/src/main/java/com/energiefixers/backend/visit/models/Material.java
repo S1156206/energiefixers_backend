@@ -43,11 +43,22 @@ public class Material {
     @Enumerated(EnumType.STRING)
     private Category category;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "unit")
+    private Unit unit;
+
     public enum Category {
         INSULATION,     // radiator foil, draught strips
         LIGHTING,       // LED bulbs
         WATER,          // water-saving showerhead
         VENTILATION,    // radiator fan
         OTHER
+    }
+
+    public enum Unit {
+        PIECE,           
+        METER,          
+        SQUARE_METER, 
+        ROLL             
     }
 }
