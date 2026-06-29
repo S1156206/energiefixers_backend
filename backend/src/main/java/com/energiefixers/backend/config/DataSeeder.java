@@ -20,6 +20,8 @@ import com.energiefixers.backend.visit.repository.FixVisitRepository;
 import com.energiefixers.backend.visit.repository.MaterialRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,6 +47,12 @@ public class DataSeeder implements ApplicationRunner {
     private final FixRoundRepository fixRoundRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.admin.password}")
+    private String adminPassword;
+
+    @Value("${app.renter.password}")
+    private String renterPassword;
+
     @Override
     public void run(ApplicationArguments args) {
         if (regionRepository.count() > 0) {
@@ -68,12 +76,8 @@ public class DataSeeder implements ApplicationRunner {
         Property prop3 = createProperty("Kettingstraat",   "Leiden", "22", null, "2321BK", Property.EnergyLabel.D, null,                    zuid,    ronde5);
         Property prop4 = createProperty("Lange Mare",      "Leiden", "45", null, "2312GT", Property.EnergyLabel.G, null,                    centrum, ronde5);
 
-        createUser("admin@energiefixers.nl",    "Admin@1234",   Role.ADMIN,  "Admin",    null);
-        createUser("staff@energiefixers.nl",    "Staff@1234",   Role.STAFF,  "Pieter",   null);
-        createUser("huurder1@energiefixers.nl", "Huurder@1234", Role.TENANT, "Jan",      prop1);
-        createUser("huurder2@energiefixers.nl", "Huurder@1234", Role.TENANT, "Lena",     prop2);
-        createUser("huurder3@energiefixers.nl", "Huurder@1234", Role.TENANT, "Mohammed", prop3);
-        createUser("huurder4@energiefixers.nl", "Huurder@1234", Role.TENANT, "Sara",     prop4);
+        createUser("admin@energiefixers.nl",    adminPassword,   Role.ADMIN,  "Admin",    null);
+        createUser("huurder1@energiefixers.nl", renterPassword, Role.TENANT, "Jan",      prop1);
 
         Material radiatorventilator = createMaterial(
                 "Radiatorventilatoren",
