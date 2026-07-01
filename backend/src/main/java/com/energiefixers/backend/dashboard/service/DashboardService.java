@@ -19,6 +19,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -294,6 +295,16 @@ public class DashboardService {
 
         long totalFixRounds = allRounds.size();
 
+        // Pre-fetch energy readings for all visited properties in one query
+        List<Long> visitedPropertyIds = allVisits.stream()
+                .map(v -> v.getProperty().getId())
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, List<EnergyReading>> readingsByPropertyId = visitedPropertyIds.isEmpty()
+                ? Map.of()
+                : energyReadingRepository.findAllByPropertyIdIn(visitedPropertyIds).stream()
+                        .collect(Collectors.groupingBy(er -> er.getProperty().getId()));
+
         BigDecimal overallGas = BigDecimal.ZERO;
         BigDecimal overallElec = BigDecimal.ZERO;
         BigDecimal overallEuros = BigDecimal.ZERO;
@@ -303,35 +314,53 @@ public class DashboardService {
         for (FixRound round : allRounds) {
             List<FixVisit> roundVisits = visitsByRound.getOrDefault(round, List.of());
 
-            long roundProperties = roundVisits.stream()
-                    .map(v -> v.getProperty().getId())
-                    .distinct()
-                    .count();
+            // Group by property so we can compute per-property actual savings
+            Map<Long, List<FixVisit>> visitsByProperty = roundVisits.stream()
+                    .collect(Collectors.groupingBy(v -> v.getProperty().getId()));
+
+            long roundProperties = visitsByProperty.size();
 
             BigDecimal roundGas = BigDecimal.ZERO;
             BigDecimal roundElec = BigDecimal.ZERO;
             BigDecimal roundEuros = BigDecimal.ZERO;
 
-            for (FixVisit v : roundVisits) {
-                if (v.getInstalledMaterials() == null) continue;
-                for (var im : v.getInstalledMaterials()) {
-                    var mat = im.getMaterial();
-                    if (mat == null) continue;
+            for (Map.Entry<Long, List<FixVisit>> entry : visitsByProperty.entrySet()) {
+                Long propId = entry.getKey();
+                List<FixVisit> propVisits = entry.getValue();
+                List<EnergyReading> readings = readingsByPropertyId.getOrDefault(propId, List.of());
 
-                    BigDecimal qty = BigDecimal.valueOf(im.getQuantity());
-
-                    if (mat.getEstimatedGasSavingM3() != null) {
-                        BigDecimal gas = qty.multiply(mat.getEstimatedGasSavingM3());
-                        roundGas = roundGas.add(gas);
-                        roundEuros = roundEuros.add(gas.multiply(GAS_PRICE_PER_M3));
-                    }
-                    if (mat.getEstimatedElectricitySavingKwh() != null) {
-                        BigDecimal elec = qty.multiply(mat.getEstimatedElectricitySavingKwh());
-                        roundElec = roundElec.add(elec);
-                        roundEuros = roundEuros.add(elec.multiply(ELECTRICITY_PRICE_PER_KWH));
+                PropertySavingsBreakdown actual = computeActualSavingsBreakdown(readings, propVisits);
+                if (actual != null) {
+                    roundGas = roundGas.add(actual.gasSavedM3());
+                    roundElec = roundElec.add(actual.electricitySavedKwh());
+                    roundEuros = roundEuros.add(actual.costSavedEuros());
+                } else {
+                    // Fall back to material-based estimates
+                    for (FixVisit v : propVisits) {
+                        if (v.getInstalledMaterials() == null) continue;
+                        for (var im : v.getInstalledMaterials()) {
+                            var mat = im.getMaterial();
+                            if (mat == null) continue;
+                            BigDecimal qty = BigDecimal.valueOf(im.getQuantity());
+                            if (mat.getEstimatedGasSavingM3() != null) {
+                                BigDecimal gas = qty.multiply(mat.getEstimatedGasSavingM3());
+                                roundGas = roundGas.add(gas);
+                                roundEuros = roundEuros.add(gas.multiply(GAS_PRICE_PER_M3));
+                            }
+                            if (mat.getEstimatedElectricitySavingKwh() != null) {
+                                BigDecimal elec = qty.multiply(mat.getEstimatedElectricitySavingKwh());
+                                roundElec = roundElec.add(elec);
+                                roundEuros = roundEuros.add(elec.multiply(ELECTRICITY_PRICE_PER_KWH));
+                            }
+                        }
                     }
                 }
             }
+
+            // Clamp round totals to zero
+            roundGas = roundGas.max(BigDecimal.ZERO);
+            roundElec = roundElec.max(BigDecimal.ZERO);
+            roundEuros = roundEuros.max(BigDecimal.ZERO);
 
             BigDecimal roundCo2 = roundGas.multiply(CO2_PER_M3_GAS).add(roundElec.multiply(CO2_PER_KWH_ELEC));
 
@@ -345,8 +374,8 @@ public class DashboardService {
                     roundCo2.setScale(0, RoundingMode.HALF_UP),
                     roundEuros.setScale(2, RoundingMode.HALF_UP),
                     roundProperties,
-                    roundGas.setScale(2, RoundingMode.HALF_UP),   // TOEGEVOEGD
-                    roundElec.setScale(2, RoundingMode.HALF_UP)   // TOEGEVOEGD
+                    roundGas.setScale(2, RoundingMode.HALF_UP),
+                    roundElec.setScale(2, RoundingMode.HALF_UP)
             ));
         }
 
@@ -365,5 +394,68 @@ public class DashboardService {
         );
     }
 
+    private PropertySavingsBreakdown computeActualSavingsBreakdown(List<EnergyReading> readings, List<FixVisit> visits) {
+        if (visits.isEmpty() || readings.isEmpty()) return null;
+
+        LocalDate firstVisit = visits.stream().map(FixVisit::getVisitDate).min(LocalDate::compareTo).orElse(null);
+        LocalDate lastVisit  = visits.stream().map(FixVisit::getVisitDate).max(LocalDate::compareTo).orElse(null);
+        if (firstVisit == null) return null;
+
+        List<EnergyReading> beforeReadings = readings.stream()
+                .filter(r -> r.getPeriodEnd().compareTo(firstVisit) <= 0)
+                .collect(Collectors.toList());
+        List<EnergyReading> afterReadings = readings.stream()
+                .filter(r -> r.getPeriodStart().compareTo(lastVisit) >= 0)
+                .collect(Collectors.toList());
+
+        if (beforeReadings.isEmpty() || afterReadings.isEmpty()) return null;
+
+        BigDecimal gasSaved = computeMonthlyDiff(
+                beforeReadings.stream().filter(r -> r.getGasUsageM3() != null).collect(Collectors.toList()),
+                afterReadings.stream().filter(r -> r.getGasUsageM3() != null).collect(Collectors.toList()),
+                EnergyReading::getGasUsageM3);
+
+        BigDecimal elecSaved = computeMonthlyDiff(
+                beforeReadings.stream().filter(r -> r.getElectricityUsageKwh() != null).collect(Collectors.toList()),
+                afterReadings.stream().filter(r -> r.getElectricityUsageKwh() != null).collect(Collectors.toList()),
+                EnergyReading::getElectricityUsageKwh);
+
+        BigDecimal costSaved = computeMonthlyDiff(
+                beforeReadings.stream().filter(r -> r.getTotalCostEuros() != null).collect(Collectors.toList()),
+                afterReadings.stream().filter(r -> r.getTotalCostEuros() != null).collect(Collectors.toList()),
+                EnergyReading::getTotalCostEuros);
+
+        // Derive cost from gas + electricity when direct cost data is unavailable
+        if (costSaved == null && gasSaved != null && elecSaved != null) {
+            costSaved = gasSaved.multiply(GAS_PRICE_PER_M3).add(elecSaved.multiply(ELECTRICITY_PRICE_PER_KWH));
+        }
+
+        if (gasSaved == null && elecSaved == null && costSaved == null) return null;
+
+        return new PropertySavingsBreakdown(
+                gasSaved  != null ? gasSaved.max(BigDecimal.ZERO)  : BigDecimal.ZERO,
+                elecSaved != null ? elecSaved.max(BigDecimal.ZERO) : BigDecimal.ZERO,
+                costSaved != null ? costSaved.max(BigDecimal.ZERO) : BigDecimal.ZERO
+        );
+    }
+
+    private BigDecimal computeMonthlyDiff(List<EnergyReading> before, List<EnergyReading> after,
+            Function<EnergyReading, BigDecimal> extractor) {
+        if (before.isEmpty() || after.isEmpty()) return null;
+        double beforeM = totalMonths(before);
+        double afterM  = totalMonths(after);
+        if (beforeM <= 0 || afterM <= 0) return null;
+
+        BigDecimal beforeSum = before.stream().map(extractor).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal afterSum  = after.stream().map(extractor).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal beforeMonthly = beforeSum.divide(BigDecimal.valueOf(beforeM), 6, RoundingMode.HALF_UP);
+        BigDecimal afterMonthly  = afterSum.divide(BigDecimal.valueOf(afterM),  6, RoundingMode.HALF_UP);
+
+        return beforeMonthly.subtract(afterMonthly).multiply(BigDecimal.valueOf(afterM));
+    }
+
     private record PropertySavings(BigDecimal monthlyActualSavingsEuros, BigDecimal actualSavingsEuros) {}
+
+    private record PropertySavingsBreakdown(BigDecimal gasSavedM3, BigDecimal electricitySavedKwh, BigDecimal costSavedEuros) {}
 }

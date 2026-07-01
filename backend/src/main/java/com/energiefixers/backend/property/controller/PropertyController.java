@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 
 import com.energiefixers.backend.energy.dto.CreateSubmissionRequestBody;
 import com.energiefixers.backend.energy.service.SubmissionService;
+import com.energiefixers.backend.invitation.dto.InvitationRequest;
+import com.energiefixers.backend.invitation.models.Invitation;
+import com.energiefixers.backend.invitation.service.InvitationService;
 import com.energiefixers.backend.property.dto.MyPropertyResponse;
 import com.energiefixers.backend.property.dto.PropertyRequest;
 import com.energiefixers.backend.property.dto.PropertyResponse;
@@ -16,6 +19,7 @@ import com.energiefixers.backend.property.dto.PropertyResponse.EmailStatus;
 import com.energiefixers.backend.property.models.Property;
 import com.energiefixers.backend.property.service.PropertyService;
 import com.energiefixers.backend.shared.ApiResponse;
+import com.energiefixers.backend.shared.CooldownException;
 import com.energiefixers.backend.shared.EmailOptOutService;
 import com.energiefixers.backend.visit.dto.FixVisitRequest;
 import com.energiefixers.backend.visit.dto.FixVisitResponse;
@@ -34,6 +38,7 @@ public class PropertyController {
     private final FixVisitService fixVisitService;
     private final SubmissionService submissionService;
     private final EmailOptOutService emailOptOutService;
+    private final InvitationService invitationService;
 
     /** Tenant: get own property including fix visits */
     @GetMapping("/me")
@@ -74,7 +79,22 @@ public class PropertyController {
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<PropertyResponse>> create(@RequestBody PropertyRequest request) {
         Property created = propertyService.create(request);
-        return ResponseEntity.status(201).body(ApiResponse.success(enriched(PropertyResponse.from(created), created.getTenantEmail())));
+        PropertyResponse response = enriched(PropertyResponse.from(created), created.getTenantEmail());
+
+        String tenantEmail = request.getTenantEmail();
+        if (tenantEmail != null && !tenantEmail.isBlank()) {
+            try {
+                InvitationRequest invReq = new InvitationRequest();
+                invReq.setPropertyId(created.getId());
+                invReq.setRecipientEmail(tenantEmail);
+                Invitation invitation = invitationService.createInvitation(invReq);
+                response.setInvitations(List.of(PropertyResponse.InvitationSummary.from(invitation)));
+            } catch (CooldownException e) {
+                // Property already has a recent invitation, leave existing list in response
+            }
+        }
+
+        return ResponseEntity.status(201).body(ApiResponse.success(response));
     }
 
     /** Staff/admin: add a fix visit to an existing property */
@@ -84,6 +104,16 @@ public class PropertyController {
             @PathVariable Long id,
             @RequestBody FixVisitRequest request) {
         FixVisit visit = fixVisitService.addFixVisit(id, request);
+
+        String tenantEmail = visit.getProperty().getTenantEmail();
+        if (tenantEmail != null && !tenantEmail.isBlank()) {
+            try {
+                submissionService.createSubmissionRequest(id, tenantEmail);
+            } catch (CooldownException e) {
+                // Recent submission already exists for this property
+            }
+        }
+
         return ResponseEntity.status(201).body(ApiResponse.success(FixVisitResponse.from(visit)));
     }
 

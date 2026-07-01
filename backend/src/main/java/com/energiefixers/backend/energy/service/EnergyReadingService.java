@@ -173,6 +173,11 @@ public class EnergyReadingService {
         BigDecimal annualElec = savingsCalculator.annualize(subtract(avgDailyElecBefore, savingsCalculator.averageDailyRate(afterReadings, EnergyReading::getElectricityUsageKwh)));
         BigDecimal annualCost = savingsCalculator.annualize(subtract(avgDailyCostBefore, savingsCalculator.averageDailyRate(afterReadings, EnergyReading::getTotalCostEuros)));
 
+        // Clamp to zero: savings can never be negative
+        if (annualGas  != null) annualGas  = annualGas.max(BigDecimal.ZERO);
+        if (annualElec != null) annualElec = annualElec.max(BigDecimal.ZERO);
+        if (annualCost != null) annualCost = annualCost.max(BigDecimal.ZERO);
+
         // Same formula as estimates: annualRate × (daysSinceFixVisit / 365)
         // This keeps the "to date" counter growing every day, consistent with the estimated track.
         BigDecimal totalGasSaved  = annualGas  != null ? annualGas.multiply(daysFraction).setScale(2, RoundingMode.HALF_UP)  : null;
