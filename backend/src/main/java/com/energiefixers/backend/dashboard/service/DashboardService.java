@@ -335,7 +335,15 @@ public class DashboardService {
                     roundElec = roundElec.add(actual.electricitySavedKwh());
                     roundEuros = roundEuros.add(actual.costSavedEuros());
                 } else {
-                    // Fall back to material-based estimates
+                    // Fall back to material-based estimates scaled to days elapsed since first visit
+                    LocalDate firstVisit = propVisits.stream()
+                            .map(FixVisit::getVisitDate)
+                            .min(LocalDate::compareTo)
+                            .orElse(LocalDate.now());
+                    long daysSince = ChronoUnit.DAYS.between(firstVisit, LocalDate.now());
+                    BigDecimal yearsFraction = BigDecimal.valueOf(daysSince)
+                            .divide(BigDecimal.valueOf(365), 10, RoundingMode.HALF_UP);
+
                     for (FixVisit v : propVisits) {
                         if (v.getInstalledMaterials() == null) continue;
                         for (var im : v.getInstalledMaterials()) {
@@ -343,12 +351,12 @@ public class DashboardService {
                             if (mat == null) continue;
                             BigDecimal qty = BigDecimal.valueOf(im.getQuantity());
                             if (mat.getEstimatedGasSavingM3() != null) {
-                                BigDecimal gas = qty.multiply(mat.getEstimatedGasSavingM3());
+                                BigDecimal gas = qty.multiply(mat.getEstimatedGasSavingM3()).multiply(yearsFraction);
                                 roundGas = roundGas.add(gas);
                                 roundEuros = roundEuros.add(gas.multiply(GAS_PRICE_PER_M3));
                             }
                             if (mat.getEstimatedElectricitySavingKwh() != null) {
-                                BigDecimal elec = qty.multiply(mat.getEstimatedElectricitySavingKwh());
+                                BigDecimal elec = qty.multiply(mat.getEstimatedElectricitySavingKwh()).multiply(yearsFraction);
                                 roundElec = roundElec.add(elec);
                                 roundEuros = roundEuros.add(elec.multiply(ELECTRICITY_PRICE_PER_KWH));
                             }
