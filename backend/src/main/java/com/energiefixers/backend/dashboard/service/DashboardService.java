@@ -418,20 +418,26 @@ public class DashboardService {
 
         if (beforeReadings.isEmpty() || afterReadings.isEmpty()) return null;
 
+        // Multiply by time since the fix visit, not by the duration of the after-readings.
+        // This keeps the result consistent with getSavingsForTenant() and avoids the measurement
+        // period length (e.g. 5 days) distorting the total.
+        double monthsSinceVisit = ChronoUnit.DAYS.between(firstVisit, LocalDate.now()) / AVG_DAYS_PER_MONTH;
+        if (monthsSinceVisit <= 0) return null;
+
         BigDecimal gasSaved = computeMonthlyDiff(
                 beforeReadings.stream().filter(r -> r.getGasUsageM3() != null).collect(Collectors.toList()),
                 afterReadings.stream().filter(r -> r.getGasUsageM3() != null).collect(Collectors.toList()),
-                EnergyReading::getGasUsageM3);
+                EnergyReading::getGasUsageM3, monthsSinceVisit);
 
         BigDecimal elecSaved = computeMonthlyDiff(
                 beforeReadings.stream().filter(r -> r.getElectricityUsageKwh() != null).collect(Collectors.toList()),
                 afterReadings.stream().filter(r -> r.getElectricityUsageKwh() != null).collect(Collectors.toList()),
-                EnergyReading::getElectricityUsageKwh);
+                EnergyReading::getElectricityUsageKwh, monthsSinceVisit);
 
         BigDecimal costSaved = computeMonthlyDiff(
                 beforeReadings.stream().filter(r -> r.getTotalCostEuros() != null).collect(Collectors.toList()),
                 afterReadings.stream().filter(r -> r.getTotalCostEuros() != null).collect(Collectors.toList()),
-                EnergyReading::getTotalCostEuros);
+                EnergyReading::getTotalCostEuros, monthsSinceVisit);
 
         // Derive cost from gas + electricity when direct cost data is unavailable
         if (costSaved == null && gasSaved != null && elecSaved != null) {
@@ -448,7 +454,7 @@ public class DashboardService {
     }
 
     private BigDecimal computeMonthlyDiff(List<EnergyReading> before, List<EnergyReading> after,
-            Function<EnergyReading, BigDecimal> extractor) {
+            Function<EnergyReading, BigDecimal> extractor, double multiplierMonths) {
         if (before.isEmpty() || after.isEmpty()) return null;
         double beforeM = totalMonths(before);
         double afterM  = totalMonths(after);
@@ -460,7 +466,7 @@ public class DashboardService {
         BigDecimal beforeMonthly = beforeSum.divide(BigDecimal.valueOf(beforeM), 6, RoundingMode.HALF_UP);
         BigDecimal afterMonthly  = afterSum.divide(BigDecimal.valueOf(afterM),  6, RoundingMode.HALF_UP);
 
-        return beforeMonthly.subtract(afterMonthly).multiply(BigDecimal.valueOf(afterM));
+        return beforeMonthly.subtract(afterMonthly).multiply(BigDecimal.valueOf(multiplierMonths));
     }
 
     private record PropertySavings(BigDecimal monthlyActualSavingsEuros, BigDecimal actualSavingsEuros) {}
